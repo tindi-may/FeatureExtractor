@@ -2,8 +2,6 @@
 #include <JuceHeader.h>
 #include "FeatureResult.h"
 
-//sono sus del count: sembra essere uguale per tutti i file audio (?)
-
 class Functional {
 public:
 	Functional() {}
