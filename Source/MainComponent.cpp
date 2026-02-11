@@ -2,8 +2,6 @@
 #include "TemporalFeatures.h"
 #include "SpectralFeatures.h"
 
-//parallelismo thread pool
-//usare mappe per nomi?
 //multithread?
 MainComponent::MainComponent() : audioPlayer(formatManager) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
@@ -21,12 +19,35 @@ MainComponent::MainComponent() : audioPlayer(formatManager) {
         processFile(filesToProcess);
         };
 
+    addAndMakeVisible(midiTitleLabel);
+    midiTitleLabel.setText("MIDI", dontSendNotification);
+    midiTitleLabel.setFont(Font(18.0f, Font::bold));
+
+    addAndMakeVisible(midiCheck);
+    midiCheck.setButtonText("");
+
+    addAndMakeVisible(oscTitleLabel);
+    oscTitleLabel.setText("OSC", dontSendNotification);
+    oscTitleLabel.setFont(Font(18.0f, Font::bold));
+
+    addAndMakeVisible(oscCheck);
+    oscCheck.setButtonText("");
+
     addAndMakeVisible(oscIPEditor);
     oscIPEditor.setText(oscIP);
     oscIPEditor.onTextChange = [this] {
         oscIP = oscIPEditor.getText();
         oscSender.connect(oscIP, oscPort);
         };
+
+    addAndMakeVisible(oscIPLabel);
+    oscIPLabel.setText("OSC IP address:", dontSendNotification);
+    oscIPLabel.attachToComponent(&oscIPEditor, false);
+
+    addAndMakeVisible(oscPortLabel);
+    oscPortLabel.setText("OSC port:", dontSendNotification);
+    oscPortLabel.attachToComponent(&oscPortEditor, false);
+
 
     addAndMakeVisible(oscPortEditor);
     oscPortEditor.setText(String(oscPort));
@@ -86,13 +107,18 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
                     features[i]->processBlock(proxyBuffer);
 
                     auto res = features[i]->getResult(proxyBuffer.getNumSamples());
-
-                    midiMapper.toMidi(res, features[i]->getName(), midiBuffer);
+                    if (midiCheck.getToggleState()) {
+                        midiMapper.toMidi(res, features[i]->getName(), midiBuffer);
+                    }
+                    if (oscCheck.getToggleState()) {
+                        oscMapper.toOsc(res, features[i]->getName(), oscSender); //uso bundle o lascio cosi?
+                    }
                 }
             }
-
-            if (auto* output = deviceManager.getDefaultMidiOutput()) {
-                output->sendBlockOfMessagesNow(midiBuffer);
+            if (midiCheck.getToggleState()) {
+                if (auto* output = deviceManager.getDefaultMidiOutput()) {
+                    output->sendBlockOfMessagesNow(midiBuffer);
+                }
             }
         }
     }
@@ -214,7 +240,29 @@ void MainComponent::releaseResources() {
 void MainComponent::resized() {
     auto area = getLocalBounds().reduced(10);
     auto leftColumn = area.removeFromLeft(getWidth() * 0.4f);
+    auto rightColumn = area.removeFromRight(getWidth() * 0.3f);
     audioPlayer.setBounds(leftColumn.removeFromTop(500));
+
+    auto midiHeaderArea = rightColumn.removeFromTop(40);
+    int midiLabelWidth = midiTitleLabel.getFont().getStringWidth(midiTitleLabel.getText()) + 5;
+    midiTitleLabel.setBounds(midiHeaderArea.removeFromLeft(midiLabelWidth));
+    midiCheck.setBounds(midiHeaderArea.removeFromLeft(30).withSizeKeepingCentre(30, 30));
+
+    rightColumn.removeFromTop(20);
+    midiOutputList.setBounds(rightColumn.removeFromTop(30));
+
+    rightColumn.removeFromTop(40);
+    
+    auto oscHeaderArea = rightColumn.removeFromTop(20);
+    int oscLabelWidth = oscTitleLabel.getFont().getStringWidth(oscTitleLabel.getText()) + 5;
+    oscTitleLabel.setBounds(oscHeaderArea.removeFromLeft(oscLabelWidth));
+    oscCheck.setBounds(oscHeaderArea.removeFromLeft(30).withSizeKeepingCentre(30, 30));
+
+    rightColumn.removeFromTop(25);
+    oscIPEditor.setBounds(rightColumn.removeFromTop(25));
+
+    rightColumn.removeFromTop(25); 
+    oscPortEditor.setBounds(rightColumn.removeFromTop(25));
 
     area.removeFromLeft(20);
     featuresLabel.setBounds(area.removeFromTop(30));
@@ -239,10 +287,6 @@ void MainComponent::resized() {
     area.removeFromTop(5);
 
     csvPathButton.setBounds(area.removeFromTop(36).removeFromRight(getWidth() - 150).reduced(8));
-
-    area.removeFromTop(20);
-
-    midiOutputList.setBounds(area.removeFromTop(36).removeFromRight(getWidth() - 150).reduced(8));
 }
 
 void MainComponent::paint(juce::Graphics& g) {

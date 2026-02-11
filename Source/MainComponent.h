@@ -44,9 +44,10 @@ private:
     ComboBox midiOutputList; //midi out list for user selection
     Label midiOutputListLabel;
     int lastOutputIndex = 0;
-
+    ToggleButton midiCheck;
     MidiBuffer midiBuffer;
     MidiMapper midiMapper;
+    Label midiTitleLabel;
 
     //osc 
     OSCSender oscSender;
@@ -55,6 +56,8 @@ private:
     Label oscIPLabel, oscPortLabel;
     TextEditor oscIPEditor, oscPortEditor;
     OscMapper oscMapper;
+    ToggleButton oscCheck;
+    Label oscTitleLabel;
 
     //csv
     TextButton csvPathButton;
