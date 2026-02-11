@@ -1,5 +1,5 @@
 #include "Functionals.h"
-//hello
+//hell
 void Average::compute(const FeatureResult& res) {
     if (sums.empty()) {
         sums.resize(res.values.size(), 0.0);
