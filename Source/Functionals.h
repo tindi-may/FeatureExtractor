@@ -1,0 +1,90 @@
+#pragma once
+#include <JuceHeader.h>
+#include "FeatureResult.h"
+
+//sono sus del count: sembra essere uguale per tutti i file audio (?)
+
+class Functional {
+public:
+	Functional() {}
+	virtual ~Functional() = default;
+
+	virtual void compute(const FeatureResult& res) = 0;
+	virtual String getName() const = 0;
+	virtual void reset() = 0;
+	virtual FeatureResult getResult()  = 0;
+	virtual Functional* clone() const = 0;
+
+protected:
+	StringArray savedNames;
+private:
+	
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Functional)
+};
+
+class Average : public Functional {
+public:
+	Average() {};
+	~Average() {};
+
+	void compute(const FeatureResult& res) override;
+	String getName() const override { return "Average"; }
+	void reset() override { sums.clear(); count = 0; savedNames.clear(); }
+	FeatureResult getResult() override;
+	Functional* clone() const override { return new Average(); }
+
+private:
+	std::vector<double> sums;
+	int count = 0;
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Average)
+};
+
+class Median : public Functional {
+public:
+	Median() {};
+	~Median() {};
+
+	void compute(const FeatureResult& res) override;
+	String getName() const override { return "Median"; }
+	void reset() override { values.clear(); savedNames.clear(); }
+	FeatureResult getResult()  override;
+	Functional* clone() const override { return new Median(); }
+
+private:
+	std::vector <std::vector<float>> values;
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Median)
+};
+
+class StdDev : public Functional {
+public:
+	StdDev() {};
+	~StdDev() {};
+
+	void compute(const FeatureResult& res) override;
+	String getName() const override { return "Standard deviation"; }
+	void reset() override { sums.clear(); sumSquares.clear(); count = 0; savedNames.clear(); }
+	FeatureResult getResult()  override;
+	Functional* clone() const override { return new StdDev(); }
+
+private:
+	int count = 0;
+	std::vector<double> sums, sumSquares;
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StdDev)
+};
+
+class IQR : public Functional {
+public:
+	IQR() {};
+	~IQR() {};
+
+	void compute(const FeatureResult& res) override;
+	String getName() const override { return "IQR"; }
+	void reset() override {  savedNames.clear(); }
+	FeatureResult getResult()  override;
+	Functional* clone() const override { return new IQR(); }
+
+private:
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(IQR)
+};
+
+
