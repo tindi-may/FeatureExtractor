@@ -33,7 +33,7 @@ private:
     Label featuresLabel;
     Label functionalsLabel;
     Label csvLabel;
-
+    
     OwnedArray<ToggleButton> featCheck;
     OwnedArray<ToggleButton> funcCheck;
     OwnedArray<Feature> features;
@@ -52,8 +52,9 @@ private:
     OSCSender oscSender;
     String oscIP = "127.0.0.1";
     int oscPort = 9001;
-
-    //OscMapper oscMapper;
+    Label oscIPLabel, oscPortLabel;
+    TextEditor oscIPEditor, oscPortEditor;
+    OscMapper oscMapper;
 
     //csv
     TextButton csvPathButton;

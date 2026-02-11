@@ -43,3 +43,18 @@ void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiM
 
     midiMessages.swapWith(auxMidi);
 }
+
+void OscMapper::toOsc(const FeatureResult& res, String name, OSCSender& sender) {
+    if (res.isEmpty()) return;
+
+    // Creiamo un indirizzo basato sul nome della feature
+    String address = "/feature/" + name.replace(" ", "_");
+    OSCMessage msg{ OSCAddressPattern(address) };
+
+    // Mandiamo i valori originali
+    for (float val : res.values) {
+        msg.addFloat32(val);
+    }
+
+    sender.send(msg);
+}

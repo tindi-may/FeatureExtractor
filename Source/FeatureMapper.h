@@ -21,7 +21,7 @@ public:
 	OscMapper() {};
 	~OscMapper() {};
 
-	void toOsc();
+	void toOsc(const FeatureResult& res, String name, OSCSender& sender);
 
 private:
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscMapper)

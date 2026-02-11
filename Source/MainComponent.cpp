@@ -21,6 +21,22 @@ MainComponent::MainComponent() : audioPlayer(formatManager) {
         processFile(filesToProcess);
         };
 
+    addAndMakeVisible(oscIPEditor);
+    oscIPEditor.setText(oscIP);
+    oscIPEditor.onTextChange = [this] {
+        oscIP = oscIPEditor.getText();
+        oscSender.connect(oscIP, oscPort);
+        };
+
+    addAndMakeVisible(oscPortEditor);
+    oscPortEditor.setText(String(oscPort));
+    oscPortEditor.onTextChange = [this] {
+        oscPort = oscPortEditor.getText().getIntValue();
+        oscSender.connect(oscIP, oscPort);
+        };
+
+    if (!oscSender.connect(oscIP, oscPort)) { DBG("Impossibile connettersi alla porta OSC " << oscPort); }
+
     printFeatures();
     printFunctionals();
     printMidi();
