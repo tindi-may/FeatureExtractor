@@ -39,7 +39,7 @@ private:
     OwnedArray<Feature> features;
     OwnedArray<Functional> functionals;
 
-    //midi roba
+    //midi
     AudioDeviceManager deviceManager; //gestione midi i/o
     ComboBox midiOutputList; //midi out list for user selection
     Label midiOutputListLabel;

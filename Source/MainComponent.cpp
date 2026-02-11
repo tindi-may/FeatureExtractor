@@ -115,7 +115,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
                     }
                 }
             }
-            if (midiCheck.getToggleState()) {
+            if (midiCheck.getToggleState() && !midiBuffer.isEmpty()) {
                 if (auto* output = deviceManager.getDefaultMidiOutput()) {
                     output->sendBlockOfMessagesNow(midiBuffer);
                 }
@@ -251,7 +251,7 @@ void MainComponent::resized() {
     rightColumn.removeFromTop(20);
     midiOutputList.setBounds(rightColumn.removeFromTop(30));
 
-    rightColumn.removeFromTop(40);
+    rightColumn.removeFromTop(15);
     
     auto oscHeaderArea = rightColumn.removeFromTop(20);
     int oscLabelWidth = oscTitleLabel.getFont().getStringWidth(oscTitleLabel.getText()) + 5;
