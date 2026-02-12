@@ -90,6 +90,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
     audioPlayer.getNextAudioBlock(bufferToFill);
 
     //usare active features/listeners anche qui?
+    //mentre in play disabled
 
     if (bufferToFill.buffer->getNumChannels() > 0 && bufferToFill.numSamples > 0) {
         if (audioPlayer.isPlaying()) {
@@ -129,15 +130,15 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
 
     Thread::launch([this, filesToProcess]() {
         auto startTime = Time::getMillisecondCounterHiRes();
-        const int batchBlockSize = 4096;
+        const int batchBlockSize = 4096; //macro
 
         String nomeCartella = filesToProcess[0].getParentDirectory().getFileName();
-        File fileScrittura = File(csvPath).getChildFile("Analisi_" + nomeCartella + ".csv");
+        File fileScrittura = File(csvPath).getChildFile("Analisi_" + nomeCartella + ".csv");//macro
 
         //se esiste viene cancellato e quindi sostituito
         if (fileScrittura.existsAsFile()) {
             fileScrittura.deleteFile();
-        } //se il file esistente è aperto non funziona, mettere controllo boh
+        } //se il file esistente aperto non funziona, mettere controllo boh
 
         std::vector<Feature*> activeFeatures;
         for (int i = 0; i < features.size(); ++i) {
