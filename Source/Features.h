@@ -33,6 +33,7 @@ public:
 protected:
     ProcessingMode currentMode = ProcessingMode::Live;
     juce::OwnedArray<Functional> func;
+    // mettere funzione per cambiare alcune setting delle feature in base alla mode, tipo overlap di fft e boh
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Feature)

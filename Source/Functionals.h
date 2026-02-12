@@ -77,11 +77,12 @@ public:
 
 	void compute(const FeatureResult& res) override;
 	String getName() const override { return "IQR"; }
-	void reset() override {  savedNames.clear(); }
+	void reset() override { values.clear(); savedNames.clear(); }
 	FeatureResult getResult()  override;
 	Functional* clone() const override { return new IQR(); }
 
 private:
+	std::vector <std::vector<float>> values;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(IQR)
 };
 

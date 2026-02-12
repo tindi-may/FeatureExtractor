@@ -56,8 +56,6 @@ MainComponent::MainComponent() : audioPlayer(formatManager) {
         oscSender.connect(oscIP, oscPort);
         };
 
-    if (!oscSender.connect(oscIP, oscPort)) { DBG("Impossibile connettersi alla porta OSC " << oscPort); }
-
     printFeatures();
     printFunctionals();
     printMidi();
@@ -139,7 +137,7 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
         //se esiste viene cancellato e quindi sostituito
         if (fileScrittura.existsAsFile()) {
             fileScrittura.deleteFile();
-        }
+        } //se il file esistente è aperto non funziona, mettere controllo boh
 
         std::vector<Feature*> activeFeatures;
         for (int i = 0; i < features.size(); ++i) {

@@ -1,4 +1,5 @@
 #include "Functionals.h"
+#include <algorithm>
 
 void Average::compute(const FeatureResult& res) {
     if (sums.empty()) {
@@ -6,7 +7,7 @@ void Average::compute(const FeatureResult& res) {
         savedNames = res.names;
     }
 
-    for (size_t i = 0; i < res.values.size(); ++i) {
+    for (int i = 0; i < res.values.size(); ++i) {
         sums[i] += (double)(res.values[i]);
     }
 
@@ -19,7 +20,7 @@ FeatureResult Average::getResult()  {
     if (count == 0 || sums.empty())
         return res;
 
-    for (size_t i = 0; i < sums.size(); ++i) {
+    for (int i = 0; i < sums.size(); ++i) {
         float finalAverage = (float)(sums[i] / count);
 
         String label = savedNames[i];
@@ -36,7 +37,7 @@ void Median::compute(const FeatureResult& res)
         savedNames = res.names;
     }
 
-    for (size_t i = 0; i < res.values.size(); ++i) {
+    for (int i = 0; i < res.values.size(); ++i) {
         values[i].push_back(res.values[i]);
     }
 }
@@ -45,9 +46,9 @@ FeatureResult Median::getResult() {
     FeatureResult res;
     if (values.empty() || values[0].empty()) return res;
 
-    for (size_t i = 0; i < values.size(); ++i) {
+    for (int i = 0; i < values.size(); ++i) {
         auto& v = values[i];
-        size_t n = v.size() / 2;
+        int n = round(v.size() / 2);
         //prima avevo usato sort, questo è meglio
         std::nth_element(v.begin(), v.begin() + n, v.end());
 
@@ -63,7 +64,7 @@ void StdDev::compute(const FeatureResult& res) {
         sumSquares.resize(res.values.size(), 0.0);
         savedNames = res.names;
     }
-    for (size_t i = 0; i < res.values.size(); ++i) {
+    for (int i = 0; i < res.values.size(); ++i) {
         double val = static_cast<double>(res.values[i]);
         sums[i] += val;
         sumSquares[i] += (val * val);
@@ -75,7 +76,7 @@ FeatureResult StdDev::getResult() {
     FeatureResult res;
     if (count < 2) return res;
 
-    for (size_t i = 0; i < sums.size(); ++i) {
+    for (int i = 0; i < sums.size(); ++i) {
         double mean = sums[i] / count;
         
         double variance = (sumSquares[i] / count) - (mean * mean);
@@ -85,8 +86,26 @@ FeatureResult StdDev::getResult() {
 }
 
 void IQR::compute(const FeatureResult& res) {
+    if (values.empty()) {
+        values.resize(res.values.size());
+        savedNames = res.names;
+    }
+
+    for (int i = 0; i < res.values.size(); ++i) {
+        values[i].push_back(res.values[i]);
+    }
 }
 
 FeatureResult IQR::getResult() {
-    return FeatureResult();
+    FeatureResult res;
+    if (values.empty() || values[0].empty()) return res;
+
+    for (int i = 0; i < values.size(); ++i) {
+        auto v = values[i];
+        
+
+        float medianVal = v[n];
+        res.add(savedNames[i], medianVal);
+    }
+    return res;
 }
