@@ -43,6 +43,7 @@ void Median::compute(const FeatureResult& res)
 }
 
 FeatureResult Median::getResult() {
+    //non ho messo controllo per mediana pari nn so se serve immagino di si uffa
     FeatureResult res;
     if (values.empty() || values[0].empty()) return res;
 
@@ -97,15 +98,22 @@ void IQR::compute(const FeatureResult& res) {
 }
 
 FeatureResult IQR::getResult() {
+    //anche qui manca controllo pari mi sn scordata ok
     FeatureResult res;
     if (values.empty() || values[0].empty()) return res;
 
     for (int i = 0; i < values.size(); ++i) {
-        auto v = values[i];
-        
+        auto& v = values[i];
+        sort(v.begin(), v.end());
+        std::vector<float> q1, q3;
+        q1.resize(floor(v.size() / 2));
+        q3.resize(floor(v.size() / 2));
 
-        float medianVal = v[n];
-        res.add(savedNames[i], medianVal);
+        for (int i = 0; i < v.size() / 2; ++i) { q1[i] = v[i]; }
+        for (int i = v.size()/2 + 1; i < v.size(); ++i) { q3[i] = v[i];}
+
+        auto iqr = q3[round(q3.size()/2)] - q1[round(q1.size() / 2)];
+        res.add(savedNames[i], iqr);
     }
     return res;
 }
