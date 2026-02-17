@@ -27,7 +27,6 @@ private:
     AudioFormatManager formatManager;
 
     //batch roba
-    std::atomic<bool> isBatchProcessing{ false };
     void processFile(std::vector<File> filesToProcess);
 
     Label featuresLabel;
