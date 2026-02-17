@@ -46,6 +46,8 @@ void SpectralMoments::calculateSpectralFeatures(const std::vector<float>& magnit
         skewness = 0.0f;
         kurtosis = 0.0f;
     }
+
+
 }
 
 void F0::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins)
@@ -73,11 +75,11 @@ void F0::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fft
         f0 = 0.0f;
     }
 
-    if (currentMode == ProcessingMode::Batch) {
-        FeatureResult f0Res;
-        f0Res.add("Fundamental Frequency", f0);
-        computeFunctionals(f0Res);
-    }
+    //if (currentMode == ProcessingMode::Batch) {
+    //    FeatureResult f0Res;
+    //    f0Res.add("Fundamental Frequency", f0);
+    //    computeFunctionals(f0Res);
+    //}
 }
 
 void Chromagram::prepareToPlay(double sr, int samplesPerBlock)
@@ -91,15 +93,15 @@ void Chromagram::calculateSpectralFeatures(const std::vector<float>& magnitudes,
     chroma.fill(0.0f);
     const float binToHz = static_cast<float>(sampleRate) / static_cast<float>(fftSize); //converto bin in hz
 
-
+    //prendere solo picchi (i valori più grandi sia bin prec che succ)
     for (int i = 0; i < numBins; ++i)
     {
         float freq = i * binToHz;
-        if (freq > 20.0f)
+        if (freq > 20.0f) //trovare freq minima per chromagram
         {
             float midiNote = 69.0f + 12.0f * std::log2(freq / 440.0f);
 
-            int noteNum = static_cast<int>(std::round(midiNote));
+            int noteNum = roundToInt(midiNote);
             int chromaBin = ((noteNum % 12) + 12) % 12;
 
             chroma[chromaBin] += magnitudes[i];

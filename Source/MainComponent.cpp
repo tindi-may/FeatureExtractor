@@ -2,7 +2,21 @@
 #include "TemporalFeatures.h"
 #include "SpectralFeatures.h"
 
-//multithread?
+//uml diagram boh schema di flusso
+//togliere functional da feature
+//status bar, cancel
+//sistemare connessione osc
+//swipe f0 
+//picchi chromagram
+//classe mia che fa tutto e main component chiama solo i metodi
+//sistemare mapping 
+//sr dei msg midi/osc (FARE bundle)
+//no checkbox per le feature /functional
+//disabilitare gui quando in processing
+//live processing: spunta live input (input che voglio tipo mic) e monitor output (muta roba)
+//classe juce per input (audio settings)
+//facile convertire vst
+//overlap fft
 MainComponent::MainComponent() : audioPlayer(formatManager) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
 
@@ -207,7 +221,7 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
         }
 
         auto stopTime = Time::getMillisecondCounterHiRes();
-        auto totalTimeSeconds = (stopTime - startTime) / 1000.0;
+        auto totalTimeSeconds = (stopTime - startTime) / 1000.0f;
 
         MessageManager::callAsync([this, totalTimeSeconds, count = filesToProcess.size()] {
             audioPlayer.setProcessEnabled(true);

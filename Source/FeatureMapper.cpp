@@ -1,5 +1,5 @@
 #include "FeatureMapper.h"
-
+//mappa o enum meglio
 void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiMessages)
 {
     if (res.isEmpty()) return;
@@ -19,14 +19,14 @@ void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiM
         auto rmsValue = jlimit(1, 127, roundToInt(jmap(dbRms, -48.0f, 0.0f, 1.0f, 127.0f)));
         auxMidi.addEvent(MidiMessage::controllerEvent(1, 7, rmsValue), 0);
     }
-    else if (name == "Fundamental frequency") {
+    else if (name == "Fundamental frequency") { // nota singola
         if (val > 20.0f) {
             float rawMidiNote = 12.0f * std::log2(val / 440.0f) + 69.0f;
             currentOctave = std::floor(rawMidiNote / 12.0f);
             currentOctave = juce::jlimit(0, 10, currentOctave);
         }
     }
-    else if (name == "Chromagram") {
+    else if (name == "Chromagram") { //accordi (ottava standard)
         auto it = std::max_element(res.values.begin(), res.values.end());
         int noteInOctave = std::distance(res.values.begin(), it);
 
@@ -40,6 +40,9 @@ void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiM
             lastNote = juce::jlimit(0, 127, currentNote);
         }
     }
+
+    //spectral moments cc general purpose
+
 
     midiMessages.swapWith(auxMidi);
 }
