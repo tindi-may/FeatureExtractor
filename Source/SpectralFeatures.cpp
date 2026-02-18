@@ -1,8 +1,6 @@
 #include "SpectralFeatures.h"
 
-
-void SpectralMoments::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins)
-{
+void SpectralMoments::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) {
     const float binToHz = static_cast<float>(sampleRate) / static_cast<float>(fftSize);
 
     float sumMag = 0.0f;
@@ -46,12 +44,9 @@ void SpectralMoments::calculateSpectralFeatures(const std::vector<float>& magnit
         skewness = 0.0f;
         kurtosis = 0.0f;
     }
-
-
 }
 
-void F0::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins)
-{
+void F0::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) {
     const float binToHz = static_cast<float>(sampleRate) / static_cast<float>(fftSize);
 
     std::vector<float> hps = magnitudes;
@@ -74,22 +69,14 @@ void F0::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fft
     else {
         f0 = 0.0f;
     }
-
-    //if (currentMode == ProcessingMode::Batch) {
-    //    FeatureResult f0Res;
-    //    f0Res.add("Fundamental Frequency", f0);
-    //    computeFunctionals(f0Res);
-    //}
 }
 
-void Chromagram::prepareToPlay(double sr, int samplesPerBlock)
-{
+void Chromagram::prepareToPlay(double sr, int samplesPerBlock) {
     SpectralFeature::prepareToPlay(sr, samplesPerBlock);
     std::fill(chroma.begin(), chroma.end(), 0.0f);
 }
 
-void Chromagram::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins)
-{
+void Chromagram::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) {
     chroma.fill(0.0f);
     const float binToHz = static_cast<float>(sampleRate) / static_cast<float>(fftSize); //converto bin in hz
 

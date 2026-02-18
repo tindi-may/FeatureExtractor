@@ -7,10 +7,10 @@ public:
 	Functional() {}
 	virtual ~Functional() = default;
 
-	virtual void compute(const FeatureResult& res) = 0;
+	virtual void store(const FeatureResult& res) = 0;
 	virtual String getName() const = 0;
 	virtual void reset() = 0;
-	virtual FeatureResult getResult()  = 0;
+	virtual void getResult(FeatureResult& res)  = 0;
 	virtual Functional* clone() const = 0;
 
 protected:
@@ -25,10 +25,10 @@ public:
 	Average() {};
 	~Average() {};
 
-	void compute(const FeatureResult& res) override;
+	void store(const FeatureResult& res) override;
 	String getName() const override { return "Average"; }
 	void reset() override { sums.clear(); count = 0; savedNames.clear(); }
-	FeatureResult getResult() override;
+	void getResult(FeatureResult& res) override;
 	Functional* clone() const override { return new Average(); }
 
 private:
@@ -42,10 +42,10 @@ public:
 	Median() {};
 	~Median() {};
 
-	void compute(const FeatureResult& res) override;
+	void store(const FeatureResult& res) override;
 	String getName() const override { return "Median"; }
 	void reset() override { values.clear(); savedNames.clear(); }
-	FeatureResult getResult()  override;
+	void getResult(FeatureResult& res)  override;
 	Functional* clone() const override { return new Median(); }
 
 private:
@@ -58,10 +58,10 @@ public:
 	StdDev() {};
 	~StdDev() {};
 
-	void compute(const FeatureResult& res) override;
+	void store(const FeatureResult& res) override;
 	String getName() const override { return "Standard deviation"; }
 	void reset() override { sums.clear(); sumSquares.clear(); count = 0; savedNames.clear(); }
-	FeatureResult getResult()  override;
+	void getResult(FeatureResult& res)  override;
 	Functional* clone() const override { return new StdDev(); }
 
 private:
@@ -75,10 +75,10 @@ public:
 	IQR() {};
 	~IQR() {};
 
-	void compute(const FeatureResult& res) override;
+	void store(const FeatureResult& res) override;
 	String getName() const override { return "IQR"; }
 	void reset() override { values.clear(); savedNames.clear(); }
-	FeatureResult getResult()  override;
+	void getResult(FeatureResult& res)  override;
 	Functional* clone() const override { return new IQR(); }
 
 private:

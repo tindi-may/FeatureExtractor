@@ -1,16 +1,16 @@
 #include "Features.h"
 
-void Feature::resetFunctional()
-{
-	for (auto f : func)
-		f->reset();
-}
-
-void Feature::computeFunctionals(const FeatureResult& res)
-{
-	for (auto f : func)
-		f->compute(res);
-}
+//void Feature::resetFunctional()
+//{
+//	for (auto f : func)
+//		f->reset();
+//}
+//
+//void Feature::computeFunctionals(const FeatureResult& res)
+//{
+//	for (auto f : func)
+//		f->compute(res);
+//}
 
 void SpectralFeature::prepareToPlay(double sr, int samplesPerBlock)
 {
@@ -35,9 +35,9 @@ void SpectralFeature::processBlock(AudioBuffer<float>& buffer)
 
 	if (fft.isFrameReady()) {
 		calculateSpectralFeatures(fft.getMagnitudes(), fft.getFftSize(), fft.getNumBins());
-		if (currentMode == ProcessingMode::Batch) {
-			computeFunctionals(createResultPackage());
-		}
+		//if (currentMode == ProcessingMode::Batch) {
+		//	computeFunctionals(createResultPackage());
+		//}
 		fft.clearFrameReadyFlag();
 	}
 }

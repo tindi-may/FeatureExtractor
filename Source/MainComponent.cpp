@@ -157,16 +157,16 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
         std::vector<Feature*> activeFeatures;
         for (int i = 0; i < features.size(); ++i) {
             if (featCheck[i]->getToggleState()) {
-                Feature* f = features[i];
-                f->setProcessingMode(Feature::ProcessingMode::Batch);
-                f->clearFunctional();
+                //f->setProcessingMode(Feature::ProcessingMode::Batch);
+                //f->clearFunctional();
+                activeFeatures.push_back(features[i]);
+            }
+        }
 
-                for (int j = 0; j < functionals.size(); ++j) {
-                    if (funcCheck[j]->getToggleState()) {
-                        f->addFunctional(functionals[j]->clone());
-                    }
-                }
-                activeFeatures.push_back(f);
+        std::vector<Functional*> activeFunctionals;
+        for (int j = 0; j < functionals.size(); ++j) {
+            if (funcCheck[j]->getToggleState()) {
+                activeFunctionals.push_back(functionals[j]);
             }
         }
 
@@ -175,7 +175,7 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
             String header = "File_Name";
             for (auto* f : activeFeatures) {
                 auto dummyRes = f->createResultPackage();
-                for (auto* func : f->getActiveFunctionals()) {
+                for (auto* func : activeFunctionals) {
                     for (const auto& name : dummyRes.names) {
                         header << ";" << name << "_" << func->getName();
                     }
@@ -185,11 +185,14 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
 
             for (const auto& file : filesToProcess) {
                 std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor(file));
-
+               
                 if (reader != nullptr) {
                     for (auto* f : activeFeatures) {
                         f->prepareToPlay(reader->sampleRate, batchBlockSize);
-                        f->resetFunctional();
+                        //f->resetFunctional();
+                    }
+                    for (auto* func : activeFunctionals) {
+                        func->reset();
                     }
 
                     AudioBuffer<float> buffer(reader->numChannels, batchBlockSize);
@@ -197,16 +200,22 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
 
                     while (startSample < reader->lengthInSamples) {
                         reader->read(&buffer, 0, batchBlockSize, startSample, true, true);
-                        for (auto* f : activeFeatures) f->processBlock(buffer);
+                        for (auto* f : activeFeatures) {
+                            f->processBlock(buffer);
+                            for (auto* func : activeFunctionals) {
+                                func->store(f->getResult(buffer.getNumSamples()));
+                            }
+                        }
                         startSample += batchBlockSize;
                     }
 
+                    FeatureResult res;
                     String riga = file.getFileName();
                     for (auto* f : activeFeatures) {
-                        for (auto* func : f->getActiveFunctionals()) {
-                            auto res = func->getResult();
+                        for (auto* func : activeFunctionals) {
+                            func->getResult(res);
                             for (float val : res.values) {
-                                riga << ";" << String(val, 4).replace(".",",");
+                                riga << ";" << String(val, 4).replace(".", ",");
                             }
                         }
                     }
@@ -216,9 +225,9 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
             outputStream->flush();
         }
 
-        for (auto* f : features) {
-            f->setProcessingMode(Feature::ProcessingMode::Live);
-        }
+        //for (auto* f : features) {
+        //    f->setProcessingMode(Feature::ProcessingMode::Live);
+        //}
 
         auto stopTime = Time::getMillisecondCounterHiRes();
         auto totalTimeSeconds = (stopTime - startTime) / 1000.0f;

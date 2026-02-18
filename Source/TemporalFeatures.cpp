@@ -47,9 +47,9 @@ void RRMS::processBlock(AudioBuffer<float>& buffer)
 
     rmsValue = aux.getSample(0, numSamples - 1);
 
-    if (currentMode == ProcessingMode::Batch) {
-        computeFunctionals(createResultPackage());
-    }
+    //if (currentMode == ProcessingMode::Batch) {
+    //    computeFunctionals(createResultPackage());
+    //}
 }
 
 void RRMS::reset()
@@ -94,9 +94,9 @@ void PAN::processBlock(AudioBuffer<float>& buffer)
 
     panValue = (rEnergy - lEnergy) / totalEnergy;
 
-    if (currentMode == ProcessingMode::Batch) {
-        computeFunctionals(createResultPackage());
-    }
+    //if (currentMode == ProcessingMode::Batch) {
+    //    computeFunctionals(createResultPackage());
+    //}
 }
 
 void Brightness::prepareToPlay(double sr, int samplesPerBlock)
@@ -161,7 +161,7 @@ void Brightness::processBlock(AudioBuffer<float>& buffer)
     b = jlimit(0.0f, 2.0f, b);
     brightValue = (sampleRate / MathConstants<float>::pi) * (asin(b / 2.0f));
 
-    if (currentMode == ProcessingMode::Batch) {
-        computeFunctionals(createResultPackage());
-    }
+    //if (currentMode == ProcessingMode::Batch) {
+    //    computeFunctionals(createResultPackage());
+    //}
 }

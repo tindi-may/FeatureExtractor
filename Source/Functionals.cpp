@@ -1,7 +1,7 @@
 #include "Functionals.h"
 #include <algorithm>
 
-void Average::compute(const FeatureResult& res) {
+void Average::store(const FeatureResult& res) {
     if (sums.empty()) {
         sums.resize(res.values.size(), 0.0);
         savedNames = res.names;
@@ -14,11 +14,9 @@ void Average::compute(const FeatureResult& res) {
     ++count;
 }
 
-FeatureResult Average::getResult()  {
-   FeatureResult res;
-
+void Average::getResult(FeatureResult& res)  {
     if (count == 0 || sums.empty())
-        return res;
+        return;
 
     for (int i = 0; i < sums.size(); ++i) {
         float finalAverage = (float)(sums[i] / count);
@@ -27,10 +25,10 @@ FeatureResult Average::getResult()  {
         res.add(label, finalAverage);
     }
 
-    return res;
+    return;
 }
 
-void Median::compute(const FeatureResult& res)
+void Median::store(const FeatureResult& res)
 {
     if (values.empty()) {
         values.resize(res.values.size());
@@ -42,10 +40,9 @@ void Median::compute(const FeatureResult& res)
     }
 }
 
-FeatureResult Median::getResult() {
+void Median::getResult(FeatureResult& res) {
     //non ho messo controllo per mediana pari nn so se serve perchè ci sono tanti numeri
-    FeatureResult res;
-    if (values.empty() || values[0].empty()) return res;
+    if (values.empty() || values[0].empty()) return;
 
     for (int i = 0; i < values.size(); ++i) {
         auto& v = values[i];
@@ -56,10 +53,10 @@ FeatureResult Median::getResult() {
         float medianVal = v[n];
         res.add(savedNames[i], medianVal);
     }
-    return res;
+    return;
 }
 
-void StdDev::compute(const FeatureResult& res) {
+void StdDev::store(const FeatureResult& res) {
     if (sums.empty()) {
         sums.resize(res.values.size(), 0.0);
         sumSquares.resize(res.values.size(), 0.0);
@@ -73,9 +70,8 @@ void StdDev::compute(const FeatureResult& res) {
     ++count;
 }
 
-FeatureResult StdDev::getResult() {
-    FeatureResult res;
-    if (count < 2) return res;
+void StdDev::getResult(FeatureResult& res) {
+    if (count < 2) return;
 
     for (int i = 0; i < sums.size(); ++i) {
         double mean = sums[i] / count;
@@ -83,10 +79,10 @@ FeatureResult StdDev::getResult() {
         double variance = (sumSquares[i] / count) - (mean * mean);
         res.add(savedNames[i], static_cast<float>(std::sqrt(std::max(0.0, variance))));
     }
-    return res;
+    return;
 }
 
-void IQR::compute(const FeatureResult& res) {
+void IQR::store(const FeatureResult& res) {
     if (values.empty()) {
         values.resize(res.values.size());
         savedNames = res.names;
@@ -97,9 +93,8 @@ void IQR::compute(const FeatureResult& res) {
     }
 }
 
-FeatureResult IQR::getResult() {
-    FeatureResult res;
-    if (values.empty() || values[0].empty()) return res;
+void IQR::getResult(FeatureResult& res) {
+    if (values.empty() || values[0].empty()) return;
 
     for (int i = 0; i < values.size(); ++i) {
         auto& v = values[i];
@@ -112,5 +107,5 @@ FeatureResult IQR::getResult() {
         auto iqr = q3[round(q3.size()/2)] - q1[round(q1.size() / 2)];
         res.add(savedNames[i], iqr);
     }
-    return res;
+    return;
 }

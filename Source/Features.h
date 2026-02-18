@@ -1,7 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
 #include "Spectrogram.h"
-#include "Functionals.h"
 #include "FeatureResult.h"
 
 class Feature {
@@ -10,15 +9,11 @@ public:
 
     virtual ~Feature() = default;
 
-    void addFunctional(Functional* f) { func.add(f); }
-
-    void clearFunctional() { func.clear(); }
-
-    void resetFunctional();
-
-    const juce::OwnedArray<Functional>& getActiveFunctionals() const { return func; }
-
-    void computeFunctionals(const FeatureResult& res);
+    //void addFunctional(Functional* f) { func.add(f); }
+    //void clearFunctional() { func.clear(); }
+    //void resetFunctional();
+    //const juce::OwnedArray<Functional>& getActiveFunctionals() const { return func; }
+    //void computeFunctionals(const FeatureResult& res);
 
     virtual FeatureResult createResultPackage() const = 0;
     virtual FeatureResult getResult(const int numSamples) const = 0;
@@ -27,13 +22,12 @@ public:
     virtual void releaseResources() = 0;
     virtual void processBlock(juce::AudioBuffer<float>& buffer) = 0;
 
-    enum class ProcessingMode { Live, Batch };
-    void setProcessingMode(ProcessingMode newMode) { currentMode = newMode; }
+    //enum class ProcessingMode { Live, Batch };
+    //void setProcessingMode(ProcessingMode newMode) { currentMode = newMode; }
 
 protected:
-    ProcessingMode currentMode = ProcessingMode::Live;
-    juce::OwnedArray<Functional> func;
-    // mettere funzione per cambiare alcune setting delle feature in base alla mode, tipo overlap di fft e boh
+    //ProcessingMode currentMode = ProcessingMode::Live;
+    //juce::OwnedArray<Functional> func;
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Feature)
