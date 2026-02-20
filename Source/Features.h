@@ -15,8 +15,8 @@ public:
     //const juce::OwnedArray<Functional>& getActiveFunctionals() const { return func; }
     //void computeFunctionals(const FeatureResult& res);
 
-    virtual FeatureResult createResultPackage() const = 0;
-    virtual FeatureResult getResult(const int numSamples) const = 0;
+    virtual FeatureResult createResultPackage(FeatureResult& res) const = 0;
+    virtual FeatureResult getResult(const int numSamples, FeatureResult& res) const = 0;
     virtual juce::String getName() const = 0;
     virtual void prepareToPlay(double sr, int samplesPerBlock) = 0;
     virtual void releaseResources() = 0;

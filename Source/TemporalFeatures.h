@@ -16,14 +16,13 @@ public:
 
 	void processBlock(AudioBuffer<float>& buffer) override;
 
-	FeatureResult createResultPackage() const override {
-		FeatureResult rmsRes;
-		rmsRes.add("RMS", rmsValue);
-		return rmsRes;
+	FeatureResult createResultPackage(FeatureResult& res) const override {
+		res.add("RMS", rmsValue);
+		return res;
 	}
 
-	FeatureResult getResult(const int numSamples) const override {
-		return createResultPackage();
+	FeatureResult getResult(const int numSamples, FeatureResult& res) const override {
+		return createResultPackage(res);
 	};
 
 private:
@@ -56,14 +55,13 @@ public:
 
 	void processBlock(AudioBuffer<float>& buffer) override;
 
-	FeatureResult createResultPackage() const override {
-		FeatureResult panRes;
-		panRes.add("PAN", panValue);
-		return panRes;
+	FeatureResult createResultPackage(FeatureResult& res) const override {
+		res.add("PAN", panValue);
+		return res;
 	}
 
-	FeatureResult getResult(const int numSamples) const override { 
-		return createResultPackage();
+	FeatureResult getResult(const int numSamples, FeatureResult& res) const override {
+		return createResultPackage(res);
 	};
 
 private:
@@ -86,14 +84,13 @@ public:
 
 	void processBlock(AudioBuffer<float>& buffer) override;
 
-	FeatureResult createResultPackage() const override {
-		FeatureResult brightRes;
-		brightRes.add("Brightness", brightValue);
-		return brightRes;
+	FeatureResult createResultPackage(FeatureResult& res) const override {
+		res.add("Brightness", brightValue);
+		return res;
 	}
 
-	FeatureResult getResult(const int numSamples) const override {
-		return createResultPackage();
+	FeatureResult getResult(const int numSamples, FeatureResult& res) const override {
+		return createResultPackage(res);
 	}
 
 private:

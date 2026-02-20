@@ -2,13 +2,12 @@
 #include <JuceHeader.h>
 
 struct FeatureResult {
-    juce::StringArray names;
-    std::vector<float> values;
+    std::map<String, std::vector<float>> features;
 
     void add(juce::String name, float value) {
-        names.add(name);
-        values.push_back(value);
+
+        features[name].push_back(value);
     }
 
-    bool isEmpty() const { return values.empty(); }
+    bool isEmpty() const { return features.empty(); }
 };

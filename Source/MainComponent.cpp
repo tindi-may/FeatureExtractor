@@ -176,8 +176,8 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
             for (auto* f : activeFeatures) {
                 auto dummyRes = f->createResultPackage();
                 for (auto* func : activeFunctionals) {
-                    for (const auto& name : dummyRes.names) {
-                        header << ";" << name << "_" << func->getName();
+                    for (const auto& name : dummyRes.features) {
+                        header << ";" << name.first << "_" << func->getName();
                     }
                 }
             }
@@ -192,30 +192,31 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
                         //f->resetFunctional();
                     }
                     for (auto* func : activeFunctionals) {
-                        func->reset();
+                        func->reset(); //azzero tipo sum o count per ogni file
                     }
 
                     AudioBuffer<float> buffer(reader->numChannels, batchBlockSize);
                     int64 startSample = 0;
+                    FeatureResult res;
 
                     while (startSample < reader->lengthInSamples) {
                         reader->read(&buffer, 0, batchBlockSize, startSample, true, true);
                         for (auto* f : activeFeatures) {
                             f->processBlock(buffer);
-                            for (auto* func : activeFunctionals) {
-                                func->store(f->getResult(buffer.getNumSamples()));
-                            }
+                            f->getResult(buffer.getNumSamples(), res); 
                         }
+                            
                         startSample += batchBlockSize;
                     }
 
-                    FeatureResult res;
+
+                    
                     String riga = file.getFileName();
                     for (auto* f : activeFeatures) {
                         for (auto* func : activeFunctionals) {
                             func->getResult(res);
-                            for (float val : res.values) {
-                                riga << ";" << String(val, 4).replace(".", ",");
+                            for (auto& val : res.features) {
+                                riga << ";" << String(val.second, 4).replace(".", ",");
                             }
                         }
                     }
