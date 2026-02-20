@@ -88,7 +88,6 @@ void PAN::processBlock(AudioBuffer<float>& buffer)
     constexpr float silenceThreshold = 1e-3f;
 
     if (totalEnergy < silenceThreshold) {
-        panValue = 0.0f;
         return;
     }
 

@@ -206,12 +206,14 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
                         for (auto* f : activeFeatures) {
                             f->processBlock(buffer);
                             auto tempRes = f->getResult();
+                            
                             for (auto i = 0; i < tempRes.values.size(); ++i) {
                                 featPackage.add(tempRes.names[i], tempRes.values[i]);
+                                DBG(tempRes.values[i]);
                             }
                         }
                         for (auto* func : activeFunctionals) {
-                            func->store(featPackage); //cntrollo sample 
+                            func->store(featPackage);
                         }
                         startSample += batchBlockSize;
                     }
