@@ -22,7 +22,7 @@ public:
 		return rmsRes;
 	}
 
-	FeatureResult getResult(const int numSamples) const override {
+	FeatureResult getResult() const override {
 		return createResultPackage();
 	};
 
@@ -62,7 +62,7 @@ public:
 		return panRes;
 	}
 
-	FeatureResult getResult(const int numSamples) const override { 
+	FeatureResult getResult() const override { 
 		return createResultPackage();
 	};
 
@@ -92,7 +92,7 @@ public:
 		return brightRes;
 	}
 
-	FeatureResult getResult(const int numSamples) const override {
+	FeatureResult getResult() const override {
 		return createResultPackage();
 	}
 

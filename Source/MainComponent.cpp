@@ -119,7 +119,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
                 if (features[i] != nullptr && featCheck[i]->getToggleState()) {
                     features[i]->processBlock(proxyBuffer);
 
-                    auto res = features[i]->getResult(proxyBuffer.getNumSamples());
+                    auto res = features[i]->getResult();
                     if (midiCheck.getToggleState()) {
                         midiMapper.toMidi(res, features[i]->getName(), midiBuffer);
                     }
@@ -173,14 +173,17 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
         if (auto outputStream = std::unique_ptr<FileOutputStream>(fileScrittura.createOutputStream())) {
 
             String header = "File_Name";
-            for (auto* f : activeFeatures) {
-                auto dummyRes = f->createResultPackage();
-                for (auto* func : activeFunctionals) {
+            for (auto* func : activeFunctionals) {
+                for (auto* f : activeFeatures) {
+                    auto dummyRes = f->createResultPackage();
+
                     for (const auto& name : dummyRes.names) {
                         header << ";" << name << "_" << func->getName();
                     }
+
                 }
             }
+
             outputStream->writeText(header + "\n", false, false, nullptr);
 
             for (const auto& file : filesToProcess) {
@@ -189,7 +192,6 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
                 if (reader != nullptr) {
                     for (auto* f : activeFeatures) {
                         f->prepareToPlay(reader->sampleRate, batchBlockSize);
-                        //f->resetFunctional();
                     }
                     for (auto* func : activeFunctionals) {
                         func->reset();
@@ -197,26 +199,29 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
 
                     AudioBuffer<float> buffer(reader->numChannels, batchBlockSize);
                     int64 startSample = 0;
-
+                    
                     while (startSample < reader->lengthInSamples) {
                         reader->read(&buffer, 0, batchBlockSize, startSample, true, true);
+                        FeatureResult featPackage;
                         for (auto* f : activeFeatures) {
                             f->processBlock(buffer);
-                            for (auto* func : activeFunctionals) {
-                                func->store(f->getResult(buffer.getNumSamples()));
+                            auto tempRes = f->getResult();
+                            for (auto i = 0; i < tempRes.values.size(); ++i) {
+                                featPackage.add(tempRes.names[i], tempRes.values[i]);
                             }
+                        }
+                        for (auto* func : activeFunctionals) {
+                            func->store(featPackage); //cntrollo sample 
                         }
                         startSample += batchBlockSize;
                     }
-
-                    FeatureResult res;
+  
                     String riga = file.getFileName();
-                    for (auto* f : activeFeatures) {
-                        for (auto* func : activeFunctionals) {
-                            func->getResult(res);
-                            for (float val : res.values) {
-                                riga << ";" << String(val, 4).replace(".", ",");
-                            }
+
+                    for (auto* func : activeFunctionals) {
+                        auto res = func->getResult();
+                        for (float val : res.values) {
+                            riga << ";" << String(val, 4).replace(".", ",");
                         }
                     }
                     outputStream->writeText(riga + "\n", false, false, nullptr);
@@ -224,11 +229,6 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
             }
             outputStream->flush();
         }
-
-        //for (auto* f : features) {
-        //    f->setProcessingMode(Feature::ProcessingMode::Live);
-        //}
-
         auto stopTime = Time::getMillisecondCounterHiRes();
         auto totalTimeSeconds = (stopTime - startTime) / 1000.0f;
 

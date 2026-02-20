@@ -9,7 +9,7 @@ public:
 
 	String getName() const override { return "Spectral Moments"; }
 
-	FeatureResult getResult(const int numSamples) const override { 
+	FeatureResult getResult() const override { 
 		return createResultPackage();
 	}
 
@@ -37,7 +37,7 @@ public:
 
 	String getName() const override { return "Fundamental frequency"; }
 
-	FeatureResult getResult(const int numSamples) const override {
+	FeatureResult getResult() const override {
 		return createResultPackage();
 	}
 
@@ -64,7 +64,7 @@ public:
 
 	String getName() const override { return "Chromagram"; }
 
-	FeatureResult getResult(const int numSamples) const override {
+	FeatureResult getResult() const override {
 		return createResultPackage();
 	}
 

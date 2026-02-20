@@ -141,8 +141,8 @@ void Brightness::processBlock(AudioBuffer<float>& buffer)
     envelope.processBlock(buffer);
     filterEnvelope.processBlock(filterBuffer);
 
-    auto envData = envelope.getResult(buffer.getNumSamples());
-    auto fEnvData = filterEnvelope.getResult(buffer.getNumSamples());
+    auto envData = envelope.getResult();
+    auto fEnvData = filterEnvelope.getResult();
 
     float envVal = envData.values.empty() ? 0.0f : envData.values[0];
     float fEnvVal = fEnvData.values.empty() ? 0.0f : fEnvData.values[0];

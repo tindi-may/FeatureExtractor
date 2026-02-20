@@ -10,7 +10,7 @@ public:
 	virtual void store(const FeatureResult& res) = 0;
 	virtual String getName() const = 0;
 	virtual void reset() = 0;
-	virtual void getResult(FeatureResult& res)  = 0;
+	virtual FeatureResult getResult()  = 0;
 	virtual Functional* clone() const = 0;
 
 protected:
@@ -28,7 +28,7 @@ public:
 	void store(const FeatureResult& res) override;
 	String getName() const override { return "Average"; }
 	void reset() override { sums.clear(); count = 0; savedNames.clear(); }
-	void getResult(FeatureResult& res) override;
+	FeatureResult getResult() override;
 	Functional* clone() const override { return new Average(); }
 
 private:
@@ -45,7 +45,7 @@ public:
 	void store(const FeatureResult& res) override;
 	String getName() const override { return "Median"; }
 	void reset() override { values.clear(); savedNames.clear(); }
-	void getResult(FeatureResult& res)  override;
+	FeatureResult getResult() override;
 	Functional* clone() const override { return new Median(); }
 
 private:
@@ -61,7 +61,7 @@ public:
 	void store(const FeatureResult& res) override;
 	String getName() const override { return "Standard deviation"; }
 	void reset() override { sums.clear(); sumSquares.clear(); count = 0; savedNames.clear(); }
-	void getResult(FeatureResult& res)  override;
+	FeatureResult getResult() override;
 	Functional* clone() const override { return new StdDev(); }
 
 private:
@@ -78,7 +78,7 @@ public:
 	void store(const FeatureResult& res) override;
 	String getName() const override { return "IQR"; }
 	void reset() override { values.clear(); savedNames.clear(); }
-	void getResult(FeatureResult& res)  override;
+	FeatureResult getResult() override;
 	Functional* clone() const override { return new IQR(); }
 
 private:

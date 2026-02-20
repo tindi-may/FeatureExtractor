@@ -14,9 +14,10 @@ void Average::store(const FeatureResult& res) {
     ++count;
 }
 
-void Average::getResult(FeatureResult& res)  {
+FeatureResult Average::getResult()  {
+    FeatureResult res;
     if (count == 0 || sums.empty())
-        return;
+        return res;
 
     for (int i = 0; i < sums.size(); ++i) {
         float finalAverage = (float)(sums[i] / count);
@@ -25,7 +26,7 @@ void Average::getResult(FeatureResult& res)  {
         res.add(label, finalAverage);
     }
 
-    return;
+    return res;
 }
 
 void Median::store(const FeatureResult& res)
@@ -40,9 +41,10 @@ void Median::store(const FeatureResult& res)
     }
 }
 
-void Median::getResult(FeatureResult& res) {
+FeatureResult Median::getResult() {
+    FeatureResult res;
     //non ho messo controllo per mediana pari nn so se serve perchè ci sono tanti numeri
-    if (values.empty() || values[0].empty()) return;
+    if (values.empty() || values[0].empty()) return res;
 
     for (int i = 0; i < values.size(); ++i) {
         auto& v = values[i];
@@ -53,7 +55,7 @@ void Median::getResult(FeatureResult& res) {
         float medianVal = v[n];
         res.add(savedNames[i], medianVal);
     }
-    return;
+    return res;
 }
 
 void StdDev::store(const FeatureResult& res) {
@@ -70,8 +72,9 @@ void StdDev::store(const FeatureResult& res) {
     ++count;
 }
 
-void StdDev::getResult(FeatureResult& res) {
-    if (count < 2) return;
+FeatureResult StdDev::getResult() {
+    FeatureResult res;
+    if (count < 2) return res;
 
     for (int i = 0; i < sums.size(); ++i) {
         double mean = sums[i] / count;
@@ -79,7 +82,7 @@ void StdDev::getResult(FeatureResult& res) {
         double variance = (sumSquares[i] / count) - (mean * mean);
         res.add(savedNames[i], static_cast<float>(std::sqrt(std::max(0.0, variance))));
     }
-    return;
+    return res;
 }
 
 void IQR::store(const FeatureResult& res) {
@@ -93,8 +96,9 @@ void IQR::store(const FeatureResult& res) {
     }
 }
 
-void IQR::getResult(FeatureResult& res) {
-    if (values.empty() || values[0].empty()) return;
+FeatureResult IQR::getResult() {
+    FeatureResult res;
+    if (values.empty() || values[0].empty()) return res;
 
     for (int i = 0; i < values.size(); ++i) {
         auto& v = values[i];
@@ -107,5 +111,5 @@ void IQR::getResult(FeatureResult& res) {
         auto iqr = q3[round(q3.size()/2)] - q1[round(q1.size() / 2)];
         res.add(savedNames[i], iqr);
     }
-    return;
+    return res;
 }
