@@ -1,29 +1,17 @@
 #include "Functionals.h"
 #include <algorithm>
 
-//void Average::store(const FeatureResult& res) {
-//    if (sums.empty()) {
-//        sums.resize(res.values.size(), 0.0);
-//        savedNames = res.names;
-//    }
-//
-//    for (int i = 0; i < res.values.size(); ++i) {
-//        sums[i] += (double)(res.values[i]);
-//    }
-//
-//    ++count;
-//}
-
-
-
-FeatureResult Average::compute(FeatureResult res)
-{
-    if (res.isEmpty()) {
-        return;
+void Average::store(const FeatureResult& res) {
+    if (sums.empty()) {
+        sums.resize(res.values.size(), 0.0);
+        savedNames = res.names;
     }
 
-    
-    
+    for (int i = 0; i < res.values.size(); ++i) {
+        sums[i] += (double)(res.values[i]);
+    }
+
+    ++count;
 }
 
 void Average::getResult(FeatureResult& res)  {

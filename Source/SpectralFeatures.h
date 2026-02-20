@@ -9,16 +9,17 @@ public:
 
 	String getName() const override { return "Spectral Moments"; }
 
-	FeatureResult getResult(const int numSamples, FeatureResult& res) const override {
-		return createResultPackage(res);
+	FeatureResult getResult(const int numSamples) const override { 
+		return createResultPackage();
 	}
 
-	FeatureResult createResultPackage(FeatureResult& res) const override {
-		res.add("Centroid", centroid);
-		res.add("Spread", spread);
-		res.add("Skewness", skewness);
-		res.add("Kurtosis", kurtosis);
-		return res;
+	FeatureResult createResultPackage() const override {
+		FeatureResult momentRes;
+		momentRes.add("Centroid", centroid);
+		momentRes.add("Spread", spread);
+		momentRes.add("Skewness", skewness);
+		momentRes.add("Kurtosis", kurtosis);
+		return momentRes;
 	}
 
 	void calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) override;
@@ -36,13 +37,14 @@ public:
 
 	String getName() const override { return "Fundamental frequency"; }
 
-	FeatureResult getResult(const int numSamples, FeatureResult& res) const override {
-		return createResultPackage(res);
+	FeatureResult getResult(const int numSamples) const override {
+		return createResultPackage();
 	}
 
-	FeatureResult createResultPackage(FeatureResult& res) const override {
-		res.add("Fundamental Frequency", f0);
-		return res;
+	FeatureResult createResultPackage() const override {
+		FeatureResult f0Res;
+		f0Res.add("Fundamental Frequency", f0);
+		return f0Res;
 	}
 
 	void calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) override;
@@ -62,8 +64,8 @@ public:
 
 	String getName() const override { return "Chromagram"; }
 
-	FeatureResult getResult(const int numSamples, FeatureResult& res) const override {
-		return createResultPackage(res);
+	FeatureResult getResult(const int numSamples) const override {
+		return createResultPackage();
 	}
 
 	void releaseResources() override {
@@ -71,7 +73,8 @@ public:
 		chroma.fill(0.0f);                   
 	}
 	
-	FeatureResult createResultPackage(FeatureResult& res) const override {
+	FeatureResult createResultPackage() const override {
+		FeatureResult res;
 		StringArray noteNames{ "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 		for (int i = 0; i < 12; ++i) {
 			res.add(noteNames[i], chroma[i]);

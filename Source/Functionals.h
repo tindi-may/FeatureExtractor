@@ -8,9 +8,6 @@ public:
 	virtual ~Functional() = default;
 
 	virtual void store(const FeatureResult& res) = 0;
-
-	virtual FeatureResult compute(FeatureResult res) = 0;
-
 	virtual String getName() const = 0;
 	virtual void reset() = 0;
 	virtual void getResult(FeatureResult& res)  = 0;
@@ -29,9 +26,6 @@ public:
 	~Average() {};
 
 	void store(const FeatureResult& res) override;
-
-	FeatureResult compute(FeatureResult res) override;
-
 	String getName() const override { return "Average"; }
 	void reset() override { sums.clear(); count = 0; savedNames.clear(); }
 	void getResult(FeatureResult& res) override;
@@ -49,9 +43,6 @@ public:
 	~Median() {};
 
 	void store(const FeatureResult& res) override;
-
-	FeatureResult compute(FeatureResult res) override;
-
 	String getName() const override { return "Median"; }
 	void reset() override { values.clear(); savedNames.clear(); }
 	void getResult(FeatureResult& res)  override;
@@ -68,9 +59,6 @@ public:
 	~StdDev() {};
 
 	void store(const FeatureResult& res) override;
-
-	FeatureResult compute(FeatureResult res) override;
-
 	String getName() const override { return "Standard deviation"; }
 	void reset() override { sums.clear(); sumSquares.clear(); count = 0; savedNames.clear(); }
 	void getResult(FeatureResult& res)  override;
@@ -88,9 +76,6 @@ public:
 	~IQR() {};
 
 	void store(const FeatureResult& res) override;
-
-	FeatureResult compute(FeatureResult res) override;
-
 	String getName() const override { return "IQR"; }
 	void reset() override { values.clear(); savedNames.clear(); }
 	void getResult(FeatureResult& res)  override;
