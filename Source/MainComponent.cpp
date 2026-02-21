@@ -157,8 +157,6 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
         std::vector<Feature*> activeFeatures;
         for (int i = 0; i < features.size(); ++i) {
             if (featCheck[i]->getToggleState()) {
-                //f->setProcessingMode(Feature::ProcessingMode::Batch);
-                //f->clearFunctional();
                 activeFeatures.push_back(features[i]);
             }
         }
@@ -176,11 +174,9 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
             for (auto* func : activeFunctionals) {
                 for (auto* f : activeFeatures) {
                     auto dummyRes = f->createResultPackage();
-
                     for (const auto& name : dummyRes.names) {
                         header << ";" << name << "_" << func->getName();
                     }
-
                 }
             }
 
@@ -205,11 +201,9 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
                         FeatureResult featPackage;
                         for (auto* f : activeFeatures) {
                             f->processBlock(buffer);
-                            auto tempRes = f->getResult();
-                            
+                            auto tempRes = f->getResult(); //penso convenga passare direttamente per reference che fare la copia cosi                          
                             for (auto i = 0; i < tempRes.values.size(); ++i) {
                                 featPackage.add(tempRes.names[i], tempRes.values[i]);
-                                DBG(tempRes.values[i]);
                             }
                         }
                         for (auto* func : activeFunctionals) {
@@ -217,7 +211,7 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
                         }
                         startSample += batchBlockSize;
                     }
-  
+
                     String riga = file.getFileName();
 
                     for (auto* func : activeFunctionals) {
