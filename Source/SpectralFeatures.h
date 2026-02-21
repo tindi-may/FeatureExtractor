@@ -9,17 +9,15 @@ public:
 
 	String getName() const override { return "Spectral Moments"; }
 
-	FeatureResult getResult() const override { 
-		return createResultPackage();
+	void getResult(FeatureResult& featPackage) override {
+		createResultPackage(featPackage);
 	}
 
-	FeatureResult createResultPackage() const override {
-		FeatureResult momentRes;
-		momentRes.add("Centroid", centroid);
-		momentRes.add("Spread", spread);
-		momentRes.add("Skewness", skewness);
-		momentRes.add("Kurtosis", kurtosis);
-		return momentRes;
+	void createResultPackage(FeatureResult& featPackage) override {
+		featPackage.add("Centroid", centroid);
+		featPackage.add("Spread", spread);
+		featPackage.add("Skewness", skewness);
+		featPackage.add("Kurtosis", kurtosis);
 	}
 
 	void calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) override;
@@ -37,14 +35,12 @@ public:
 
 	String getName() const override { return "Fundamental frequency"; }
 
-	FeatureResult getResult() const override {
-		return createResultPackage();
+	void getResult(FeatureResult& featPackage) override {
+		createResultPackage(featPackage);
 	}
 
-	FeatureResult createResultPackage() const override {
-		FeatureResult f0Res;
-		f0Res.add("Fundamental Frequency", f0);
-		return f0Res;
+	void createResultPackage(FeatureResult& featPackage) override {
+		featPackage.add("Fundamental Frequency", f0);
 	}
 
 	void calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) override;
@@ -64,8 +60,8 @@ public:
 
 	String getName() const override { return "Chromagram"; }
 
-	FeatureResult getResult() const override {
-		return createResultPackage();
+	void getResult(FeatureResult& featPackage) override {
+		createResultPackage(featPackage);
 	}
 
 	void releaseResources() override {
@@ -73,13 +69,11 @@ public:
 		chroma.fill(0.0f);                   
 	}
 	
-	FeatureResult createResultPackage() const override {
-		FeatureResult res;
+	void createResultPackage(FeatureResult& featPackage) override {
 		StringArray noteNames{ "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 		for (int i = 0; i < 12; ++i) {
-			res.add(noteNames[i], chroma[i]);
+			featPackage.add(noteNames[i], chroma[i]);
 		}
-		return res;
 	}
 
 	void calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) override;

@@ -118,8 +118,8 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
             for (int i = 0; i < features.size(); ++i) {
                 if (features[i] != nullptr && featCheck[i]->getToggleState()) {
                     features[i]->processBlock(proxyBuffer);
-
-                    auto res = features[i]->getResult();
+                    FeatureResult res;
+                    features[i]->getResult(res);
                     if (midiCheck.getToggleState()) {
                         midiMapper.toMidi(res, features[i]->getName(), midiBuffer);
                     }
@@ -147,7 +147,7 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
         const int batchBlockSize = 4096; //macro
 
         String nomeCartella = filesToProcess[0].getParentDirectory().getFileName();
-        File fileScrittura = File(csvPath).getChildFile("Analisi_" + nomeCartella + ".csv");//macro
+        File fileScrittura = File(csvPath).getChildFile("Analisi_ref_" + nomeCartella + ".csv");//macro
 
         //se esiste viene cancellato e quindi sostituito
         if (fileScrittura.existsAsFile()) {
@@ -173,7 +173,8 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
             String header = "File_Name";
             for (auto* func : activeFunctionals) {
                 for (auto* f : activeFeatures) {
-                    auto dummyRes = f->createResultPackage();
+                    FeatureResult dummyRes;
+                    f->createResultPackage(dummyRes);
                     for (const auto& name : dummyRes.names) {
                         header << ";" << name << "_" << func->getName();
                     }
@@ -201,10 +202,7 @@ void MainComponent::processFile(std::vector<File> filesToProcess) {
                         FeatureResult featPackage;
                         for (auto* f : activeFeatures) {
                             f->processBlock(buffer);
-                            auto tempRes = f->getResult(); //penso convenga passare direttamente per reference che fare la copia cosi                          
-                            for (auto i = 0; i < tempRes.values.size(); ++i) {
-                                featPackage.add(tempRes.names[i], tempRes.values[i]);
-                            }
+                            f->getResult(featPackage);                
                         }
                         for (auto* func : activeFunctionals) {
                             func->store(featPackage);

@@ -86,8 +86,9 @@ void PAN::processBlock(AudioBuffer<float>& buffer)
     if (totalEnergy < silenceThreshold) {
         panValue = 0.0f;
     }
-
-    panValue = (rEnergy - lEnergy) / totalEnergy;
+    else {
+        panValue = (rEnergy - lEnergy) / totalEnergy;
+    }
 }
 
 void Brightness::prepareToPlay(double sr, int samplesPerBlock)
@@ -132,8 +133,9 @@ void Brightness::processBlock(AudioBuffer<float>& buffer)
     envelope.processBlock(buffer);
     filterEnvelope.processBlock(filterBuffer);
 
-    auto envData = envelope.getResult();
-    auto fEnvData = filterEnvelope.getResult();
+    FeatureResult envData, fEnvData;
+    envelope.getResult(envData);
+    filterEnvelope.getResult(fEnvData);
 
     float envVal = envData.values.empty() ? 0.0f : envData.values[0];
     float fEnvVal = fEnvData.values.empty() ? 0.0f : fEnvData.values[0];

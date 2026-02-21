@@ -9,8 +9,8 @@ public:
 
     virtual ~Feature() = default;
 
-    virtual FeatureResult createResultPackage() const = 0;
-    virtual FeatureResult getResult() const = 0;
+    virtual void createResultPackage(FeatureResult& featPackage) = 0;
+    virtual void getResult(FeatureResult& featPackage) = 0;
     virtual juce::String getName() const = 0;
     virtual void prepareToPlay(double sr, int samplesPerBlock) = 0;
     virtual void releaseResources() = 0;
