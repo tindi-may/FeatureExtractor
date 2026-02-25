@@ -5,7 +5,7 @@
 #include "FeatureMapper.h"
 #include "AudioPlayer.h"
 
-class MainComponent  : public AudioAppComponent {
+class MainComponent  : public AudioAppComponent, public ThreadWithProgressWindow {
 public:
     MainComponent();
     ~MainComponent() override;
@@ -28,6 +28,8 @@ private:
 
     //batch roba
     void processFile(std::vector<File> filesToProcess);
+    std::vector<File> filesToProcessRun;
+    void run() override;
 
     Label featuresLabel;
     Label functionalsLabel;

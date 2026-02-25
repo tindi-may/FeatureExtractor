@@ -3,9 +3,7 @@
 #include "SpectralFeatures.h"
 
 //uml diagram boh schema di flusso
-//togliere functional da feature
 //status bar, cancel
-//sistemare connessione osc
 //swipe f0 
 //picchi chromagram
 //classe mia che fa tutto e main component chiama solo i metodi
@@ -17,7 +15,7 @@
 //classe juce per input (audio settings)
 //facile convertire vst
 //overlap fft
-MainComponent::MainComponent() : audioPlayer(formatManager) {
+MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
 
     addAndMakeVisible(audioPlayer);
@@ -144,99 +142,119 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 void MainComponent::processFile(std::vector<File> filesToProcess) {
     if (filesToProcess.empty()) return;
 
+    filesToProcessRun = filesToProcess;
+
     audioPlayer.setProcessEnabled(false);
 
-    Thread::launch([this, filesToProcess]() {
-        auto startTime = Time::getMillisecondCounterHiRes();
-        const int batchBlockSize = 4096; //macro
+    ThreadWithProgressWindow::launchThread();
+}
 
-        String nomeCartella = filesToProcess[0].getParentDirectory().getFileName();
-        File fileScrittura = File(csvPath).getChildFile("Analisi_ref_" + nomeCartella + ".csv");//macro
+void MainComponent::run() {
+    auto startTime = Time::getMillisecondCounterHiRes();
+    bool processCancelled = false;
+    const int batchBlockSize = 4096; //macro
 
-        //se esiste viene cancellato e quindi sostituito
-        if (fileScrittura.existsAsFile()) {
-            fileScrittura.deleteFile();
-        } //se il file esistente aperto non funziona, mettere controllo boh
+    String nomeCartella = filesToProcessRun[0].getParentDirectory().getFileName();
+    File fileScrittura = File(csvPath).getChildFile("Analisi_ref_" + nomeCartella + ".csv");//macro
 
-        std::vector<Feature*> activeFeatures;
-        for (int i = 0; i < features.size(); ++i) {
-            if (featCheck[i]->getToggleState()) {
-                activeFeatures.push_back(features[i]);
+    //se esiste viene cancellato e quindi sostituito
+    if (fileScrittura.existsAsFile()) {
+        fileScrittura.deleteFile();
+    } //se il file esistente aperto non funziona, mettere controllo boh
+
+    std::vector<Feature*> activeFeatures;
+    for (int i = 0; i < features.size(); ++i) {
+        if (featCheck[i]->getToggleState()) {
+            activeFeatures.push_back(features[i]);
+        }
+    }
+
+    std::vector<Functional*> activeFunctionals;
+    for (int j = 0; j < functionals.size(); ++j) {
+        if (funcCheck[j]->getToggleState()) {
+            activeFunctionals.push_back(functionals[j]);
+        }
+    }
+
+    if (auto outputStream = std::unique_ptr<FileOutputStream>(fileScrittura.createOutputStream())) {
+
+        String header = "File_Name";
+        for (auto* func : activeFunctionals) {
+            for (auto* f : activeFeatures) {
+                FeatureResult dummyRes;
+                f->createResultPackage(dummyRes);
+                for (const auto& name : dummyRes.names) {
+                    header << ";" << name << "_" << func->getName();
+                }
             }
         }
 
-        std::vector<Functional*> activeFunctionals;
-        for (int j = 0; j < functionals.size(); ++j) {
-            if (funcCheck[j]->getToggleState()) {
-                activeFunctionals.push_back(functionals[j]);
-            }
-        }
-
-        if (auto outputStream = std::unique_ptr<FileOutputStream>(fileScrittura.createOutputStream())) {
-
-            String header = "File_Name";
-            for (auto* func : activeFunctionals) {
+        outputStream->writeText(header + "\n", false, false, nullptr);
+        int progressCount = 0;
+        for (const auto& file : filesToProcessRun) {
+            std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor(file));
+            if (reader != nullptr) {
                 for (auto* f : activeFeatures) {
-                    FeatureResult dummyRes;
-                    f->createResultPackage(dummyRes);
-                    for (const auto& name : dummyRes.names) {
-                        header << ";" << name << "_" << func->getName();
-                    }
+                    f->prepareToPlay(reader->sampleRate, batchBlockSize);
                 }
-            }
+                for (auto* func : activeFunctionals) {
+                    func->reset();
+                }
 
-            outputStream->writeText(header + "\n", false, false, nullptr);
+                AudioBuffer<float> buffer(reader->numChannels, batchBlockSize);
+                int64 startSample = 0;
 
-            for (const auto& file : filesToProcess) {
-                std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor(file));
-               
-                if (reader != nullptr) {
+                while (startSample < reader->lengthInSamples) {
+                    if (threadShouldExit()) { 
+                        processCancelled = true;
+                        break; }
+                    reader->read(&buffer, 0, batchBlockSize, startSample, true, true);
+                    FeatureResult featPackage;
                     for (auto* f : activeFeatures) {
-                        f->prepareToPlay(reader->sampleRate, batchBlockSize);
+                        f->processBlock(buffer);
+                        f->getResult(featPackage);
                     }
                     for (auto* func : activeFunctionals) {
-                        func->reset();
+                        func->store(featPackage);
                     }
-
-                    AudioBuffer<float> buffer(reader->numChannels, batchBlockSize);
-                    int64 startSample = 0;
-                    
-                    while (startSample < reader->lengthInSamples) {
-                        reader->read(&buffer, 0, batchBlockSize, startSample, true, true);
-                        FeatureResult featPackage;
-                        for (auto* f : activeFeatures) {
-                            f->processBlock(buffer);
-                            f->getResult(featPackage);                
-                        }
-                        for (auto* func : activeFunctionals) {
-                            func->store(featPackage);
-                        }
-                        startSample += batchBlockSize;
-                    }
-
-                    String riga = file.getFileName();
-
-                    for (auto* func : activeFunctionals) {
-                        auto res = func->getResult();
-                        for (float val : res.values) {
-                            riga << ";" << String(val, 4).replace(".", ",");
-                        }
-                    }
-                    outputStream->writeText(riga + "\n", false, false, nullptr);
+                    startSample += batchBlockSize;
                 }
-            }
-            outputStream->flush();
-        }
-        auto stopTime = Time::getMillisecondCounterHiRes();
-        auto totalTimeSeconds = (stopTime - startTime) / 1000.0f;
 
-        MessageManager::callAsync([this, totalTimeSeconds, count = filesToProcess.size()] {
+                String riga = file.getFileName();
+
+                for (auto* func : activeFunctionals) {
+                    auto res = func->getResult();
+                    for (float val : res.values) {
+                        riga << ";" << String(val, 4).replace(".", ",");
+                    }
+                }
+                outputStream->writeText(riga + "\n", false, false, nullptr);
+            }
+            setProgress(progressCount / (double) filesToProcessRun.size());
+            progressCount++;
+        }
+        outputStream->flush();
+    }
+    auto stopTime = Time::getMillisecondCounterHiRes();
+    auto totalTimeSeconds = (stopTime - startTime) / 1000.0f;
+
+    if (processCancelled) {
+        MessageManager::callAsync([this] {
             audioPlayer.setProcessEnabled(true);
             String message;
-            message << "Batch completato! " << count << " file analizzati in " << String(totalTimeSeconds, 2) << "s.";
-            NativeMessageBox::showMessageBoxAsync(AlertWindow::InfoIcon, "Successo", message);
+            message << "Processing cancelled";
+            NativeMessageBox::showMessageBoxAsync(AlertWindow::InfoIcon, "Cancelled", message);
             });
-        });
+    }
+    else {
+        MessageManager::callAsync([this, totalTimeSeconds, count = filesToProcessRun.size()] {
+            audioPlayer.setProcessEnabled(true);
+            String message;
+            message << "Batch completed! " << count << " files processed in " << String(totalTimeSeconds, 2) << "s.";
+            NativeMessageBox::showMessageBoxAsync(AlertWindow::InfoIcon, "Success", message);
+            });
+    }
+        
 }
 
 void MainComponent::pathButtonClicked()
