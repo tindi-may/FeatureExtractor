@@ -76,6 +76,10 @@ MainComponent::MainComponent() : audioPlayer(formatManager) {
 
     formatManager.registerBasicFormats();
 
+    if (!oscSender.connect(oscIP, oscPort)) {
+        AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Connection error", "Error: could not send OSC message.", "OK"); }
+
     setSize(800, 600);
 
     if (RuntimePermissions::isRequired(RuntimePermissions::recordAudio)
