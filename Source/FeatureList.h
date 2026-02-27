@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <JuceHeader.h>
 #include "Features.h"
@@ -41,14 +41,18 @@ public:
     }
 
     void paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected) override {
-        if (rowIsSelected)
-            g.fillAll(Colours::lightblue.withAlpha(0.5f));
+        if (rowIsSelected) {
+            g.setColour(Colours::white);
+            g.setFont(Font("Sans-Serif", 18.0f, Font::plain));
+            g.drawText(CharPointer_UTF8("\xe2\x9c\x93"), -15, 0, width, height, Justification::centredRight, false);
+        }
 
         g.setColour(Colours::white);
-        g.setFont(14.0f);
+        g.setFont(Font("Sans-Serif", 14.0f, Font::plain));
 
-        if (rowNumber < (int)features.size())
+        if (rowNumber < (int)features.size()) {
             g.drawText(features[rowNumber]->getName(), 5, 0, width, height, Justification::centredLeft);
+        }
     }
     void selectedRowsChanged(int lastRowSelected) override {}
 
