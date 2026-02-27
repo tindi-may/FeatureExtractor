@@ -11,7 +11,7 @@
 //live processing: spunta live input (input che voglio tipo mic) e monitor output (muta roba)
 //classe juce per input (audio settings)
 //facile convertire vst
-//overlap fft
+//overlap fft (ci mette più del doppio!)
 MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
 
@@ -153,7 +153,7 @@ void MainComponent::run() {
     const int batchBlockSize = 4096; //macro
 
     String nomeCartella = filesToProcessRun[0].getParentDirectory().getFileName();
-    File fileScrittura = File(csvPath).getChildFile("Analisi_ref_" + nomeCartella + ".csv");//macro
+    File fileScrittura = File(csvPath).getChildFile("Analisi_" + nomeCartella + ".csv");//macro
 
     //se esiste viene cancellato e quindi sostituito
     if (fileScrittura.existsAsFile()) {
