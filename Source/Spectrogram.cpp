@@ -1,7 +1,7 @@
 #include "Spectrogram.h"
-//tenere overlap fisso 50%
+
 FFT::FFT(int order) : fftOrder(order), fftSize(1 << order), numBins(fftSize / 2 + 1),
-hopSize(fftSize), fft(order), window(fftSize + 1, juce::dsp::WindowingFunction<float>::WindowingMethod::hann, true)
+overlap(3), hopSize(fftSize / overlap), fft(order), window(fftSize + 1, juce::dsp::WindowingFunction<float>::WindowingMethod::hann, true)
 {
     inputFifo.resize(fftSize, 0.0f);
     fftData.resize(fftSize * 2, 0.0f);

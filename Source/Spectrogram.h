@@ -25,6 +25,7 @@ private:
     int fftOrder;
     int fftSize;
     int numBins;
+    int overlap;
     int hopSize;
 
     juce::dsp::FFT fft;
