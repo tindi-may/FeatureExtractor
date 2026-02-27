@@ -29,6 +29,9 @@
         <FILE id="GsmjfG" name="Spectrogram.h" compile="0" resource="0" file="Source/Spectrogram.h"/>
       </GROUP>
       <FILE id="R8SuvJ" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="fzQXPB" name="FeatureList.h" compile="0" resource="0" file="Source/FeatureList.h"/>
+      <FILE id="MMXd7o" name="FunctionalList.h" compile="0" resource="0"
+            file="Source/FunctionalList.h"/>
       <FILE id="qYxDFj" name="AudioPlayer.cpp" compile="1" resource="0" file="Source/AudioPlayer.cpp"/>
       <FILE id="ez4lmR" name="AudioPlayer.h" compile="0" resource="0" file="Source/AudioPlayer.h"/>
       <FILE id="RUMmJR" name="MainComponent.cpp" compile="1" resource="0"

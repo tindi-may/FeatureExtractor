@@ -3,14 +3,11 @@
 #include "SpectralFeatures.h"
 
 //uml diagram boh schema di flusso
-//status bar, cancel
 //swipe f0 
 //picchi chromagram
 //classe mia che fa tutto e main component chiama solo i metodi
 //sistemare mapping 
 //sr dei msg midi/osc (FARE bundle)
-//no checkbox per le feature /functional
-//disabilitare gui quando in processing
 //live processing: spunta live input (input che voglio tipo mic) e monitor output (muta roba)
 //classe juce per input (audio settings)
 //facile convertire vst
@@ -68,8 +65,8 @@ MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressW
         oscSender.connect(oscIP, oscPort);
         };
 
-    printFeatures();
-    printFunctionals();
+    addAndMakeVisible(&featList);
+    addAndMakeVisible(&funcList);
     printMidi();
 
     formatManager.registerBasicFormats();
@@ -96,6 +93,7 @@ MainComponent::~MainComponent() {
 
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
     audioPlayer.prepareToPlay(samplesPerBlockExpected, sampleRate);
+    auto& features = featList.getFeatures();
     for (int i = 0; i < features.size(); ++i) {
         features[i]->prepareToPlay(sampleRate, samplesPerBlockExpected);
     }
@@ -116,9 +114,9 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
                 bufferToFill.numSamples);
 
             midiBuffer.clear();
-
+            auto& features = featList.getFeatures();
             for (int i = 0; i < features.size(); ++i) {
-                if (features[i] != nullptr && featCheck[i]->getToggleState()) {
+                if (features[i] != nullptr && featList.isRowSelected(i)) {
                     features[i]->processBlock(proxyBuffer);
                     FeatureResult res;
                     features[i]->getResult(res);
@@ -162,16 +160,18 @@ void MainComponent::run() {
         fileScrittura.deleteFile();
     } //se il file esistente aperto non funziona, mettere controllo boh
 
+    auto& features = featList.getFeatures();
     std::vector<Feature*> activeFeatures;
     for (int i = 0; i < features.size(); ++i) {
-        if (featCheck[i]->getToggleState()) {
+        if (featList.isRowSelected(i)) {
             activeFeatures.push_back(features[i]);
         }
     }
 
+    auto& functionals = funcList.getFunctionals();
     std::vector<Functional*> activeFunctionals;
     for (int j = 0; j < functionals.size(); ++j) {
-        if (funcCheck[j]->getToggleState()) {
+        if (funcList.isRowSelected(j)) {
             activeFunctionals.push_back(functionals[j]);
         }
     }
@@ -272,99 +272,49 @@ void MainComponent::pathButtonClicked()
 
 void MainComponent::releaseResources() {
     audioPlayer.releaseResources();
+    auto& features = featList.getFeatures();
     for (auto* f : features) f->releaseResources();
 }
 
 void MainComponent::resized() {
-    auto area = getLocalBounds().reduced(10);
-    auto leftColumn = area.removeFromLeft(getWidth() * 0.4f);
-    auto rightColumn = area.removeFromRight(getWidth() * 0.3f);
+    auto area = getLocalBounds().reduced(20);
+
+    auto columnWidth = area.getWidth() / 3.0f;
+
+    auto leftColumn = area.removeFromLeft(columnWidth).reduced(10, 0);
+
+    auto rightColumn = area.removeFromRight(columnWidth).reduced(10, 0);
+
+    auto centerColumn = area.reduced(10, 0);
+
     audioPlayer.setBounds(leftColumn.removeFromTop(500));
 
-    auto midiHeaderArea = rightColumn.removeFromTop(40);
-    int midiLabelWidth = midiTitleLabel.getFont().getStringWidth(midiTitleLabel.getText()) + 5;
-    midiTitleLabel.setBounds(midiHeaderArea.removeFromLeft(midiLabelWidth));
-    midiCheck.setBounds(midiHeaderArea.removeFromLeft(30).withSizeKeepingCentre(30, 30));
+    featList.setBounds(centerColumn.removeFromTop(200));
+    centerColumn.removeFromTop(10);
+    funcList.setBounds(centerColumn.removeFromTop(200));
+    centerColumn.removeFromTop(20);
+    csvLabel.setBounds(centerColumn.removeFromTop(30));
+    csvPathButton.setBounds(centerColumn.removeFromTop(40).reduced(0, 2));
 
-    rightColumn.removeFromTop(20);
+    auto midiHeaderArea = rightColumn.removeFromTop(40);
+    midiTitleLabel.setBounds(midiHeaderArea.removeFromLeft(50));
+    midiCheck.setBounds(midiHeaderArea.removeFromLeft(30).withSizeKeepingCentre(30, 30));
+    rightColumn.removeFromTop(15);
     midiOutputList.setBounds(rightColumn.removeFromTop(30));
 
-    rightColumn.removeFromTop(15);
-    
-    auto oscHeaderArea = rightColumn.removeFromTop(20);
-    int oscLabelWidth = oscTitleLabel.getFont().getStringWidth(oscTitleLabel.getText()) + 5;
-    oscTitleLabel.setBounds(oscHeaderArea.removeFromLeft(oscLabelWidth));
+    rightColumn.removeFromTop(30); 
+
+    auto oscHeaderArea = rightColumn.removeFromTop(40);
+    oscTitleLabel.setBounds(oscHeaderArea.removeFromLeft(50));
     oscCheck.setBounds(oscHeaderArea.removeFromLeft(30).withSizeKeepingCentre(30, 30));
-
+    rightColumn.removeFromTop(15);
+    oscIPEditor.setBounds(rightColumn.removeFromTop(30));
     rightColumn.removeFromTop(25);
-    oscIPEditor.setBounds(rightColumn.removeFromTop(25));
-
-    rightColumn.removeFromTop(25); 
-    oscPortEditor.setBounds(rightColumn.removeFromTop(25));
-
-    area.removeFromLeft(20);
-    featuresLabel.setBounds(area.removeFromTop(30));
-    area.removeFromTop(5);
-
-    for (auto* cb : featCheck) {
-        cb->setBounds(area.removeFromTop(30));
-        area.removeFromTop(5);
-    }
-
-    functionalsLabel.setBounds(area.removeFromTop(30));
-    area.removeFromTop(5);
-
-    for (auto* cb : funcCheck) {
-        cb->setBounds(area.removeFromTop(30));
-        area.removeFromTop(5);
-    }
-
-    area.removeFromTop(5);
-    
-    csvLabel.setBounds(area.removeFromTop(30));
-    area.removeFromTop(5);
-
-    csvPathButton.setBounds(area.removeFromTop(36).removeFromRight(getWidth() - 150).reduced(8));
+    oscPortEditor.setBounds(rightColumn.removeFromTop(30));
 }
 
 void MainComponent::paint(juce::Graphics& g) {
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
-}
-
-void MainComponent::printFeatures() {
-    features.add(new RRMS());
-    features.add(new PAN());
-    features.add(new Brightness());
-    features.add(new SpectralMoments());
-    features.add(new Chromagram());
-    features.add(new F0());
-
-    for (auto* f : features) {
-        auto* cb = new ToggleButton(f->getName());
-        featCheck.add(cb);
-        addAndMakeVisible(cb);
-    }
-
-    addAndMakeVisible(&featuresLabel);
-    featuresLabel.setText("Features", dontSendNotification);
-    featuresLabel.setFont(Font(18.0f, Font::bold));
-}
-
-void MainComponent::printFunctionals() {   
-    functionals.add(new Average());
-    functionals.add(new Median());
-    functionals.add(new StdDev());
-    functionals.add(new IQR());
-
-    for (auto* f : functionals) {
-        auto* cb = new ToggleButton(f->getName());
-        funcCheck.add(cb);
-        addAndMakeVisible(cb);
-    }
-
-    addAndMakeVisible(&functionalsLabel);
-    functionalsLabel.setText("Functionals", dontSendNotification);
-    functionalsLabel.setFont(Font(18.0f, Font::bold));
 }
 
 void MainComponent::printMidi() {

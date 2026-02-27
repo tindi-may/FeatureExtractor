@@ -4,6 +4,8 @@
 #include "Functionals.h"
 #include "FeatureMapper.h"
 #include "AudioPlayer.h"
+#include "FunctionalList.h"
+#include "FeatureList.h"
 
 class MainComponent  : public AudioAppComponent, public ThreadWithProgressWindow {
 public:
@@ -18,8 +20,6 @@ public:
     void resized() override;
 
 private:
-    void printFeatures();
-    void printFunctionals();
     void printMidi();
     void setMidiOutput(int index);
 
@@ -31,14 +31,9 @@ private:
     std::vector<File> filesToProcessRun;
     void run() override;
 
-    Label featuresLabel;
-    Label functionalsLabel;
     Label csvLabel;
-    
-    OwnedArray<ToggleButton> featCheck;
-    OwnedArray<ToggleButton> funcCheck;
-    OwnedArray<Feature> features;
-    OwnedArray<Functional> functionals;
+    FuncList funcList;
+    FeatList featList;
 
     //midi
     AudioDeviceManager deviceManager; //gestione midi i/o
