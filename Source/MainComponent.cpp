@@ -3,7 +3,6 @@
 #include "SpectralFeatures.h"
 
 //uml diagram boh schema di flusso
-//swipe f0 
 //picchi chromagram
 //classe mia che fa tutto e main component chiama solo i metodi
 //sistemare mapping 
