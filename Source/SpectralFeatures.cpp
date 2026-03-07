@@ -304,14 +304,13 @@ void Chromagram::prepareToPlay(double sr, int samplesPerBlock) {
 void Chromagram::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) {
     chroma.fill(0.0f);
     const float binToHz = static_cast<float>(sampleRate) / static_cast<float>(fftSize); //converto bin in hz
-    std::vector<int> peakMagnitudes;
 
-    for (int i = 1; i < numBins - 1; ++i) {
+    for (int i = 1; i < numBins - 2; ++i) {
         //prendere solo picchi locali (i valori più grandi sia bin prec che succ)
+        //non capisco se sia meglio...
         if (magnitudes[i] > magnitudes[i - 1] && magnitudes[i] > magnitudes[i + 1]) {
             float freq = i * binToHz;
-            if (freq >= 32.7)  { //usato minimo essentia
-
+            if (freq >= 32.7f)  { //usato minimo essentia
                 float midiNote = 69.0f + 12.0f * std::log2(freq / 440.0f);
 
                 int noteNum = roundToInt(midiNote);
