@@ -306,24 +306,19 @@ void Chromagram::calculateSpectralFeatures(const std::vector<float>& magnitudes,
     const float binToHz = static_cast<float>(sampleRate) / static_cast<float>(fftSize); //converto bin in hz
     std::vector<int> peakMagnitudes;
 
-    //prendere solo picchi (i valori più grandi sia bin prec che succ)
-    for (int i = 1; i < numBins - 2; ++i) {
-        if (magnitudes[i] > magnitudes[i-1] && magnitudes[i] > magnitudes[i+1]) {
-            peakMagnitudes.push_back(magnitudes[i]);
-        }
-    }
+    for (int i = 1; i < numBins - 1; ++i) {
+        //prendere solo picchi locali (i valori più grandi sia bin prec che succ)
+        if (magnitudes[i] > magnitudes[i - 1] && magnitudes[i] > magnitudes[i + 1]) {
+            float freq = i * binToHz;
+            if (freq >= 32.7)  { //usato minimo essentia
 
-    for (int i = 0; i < peakMagnitudes.size(); ++i)
-    {
-        float freq = i * binToHz;
-        if (freq > 32.7f) //messo minimo di essentia, non se c'è un modo migliore
-        {
-            float midiNote = 69.0f + 12.0f * std::log2(freq / 440.0f);
+                float midiNote = 69.0f + 12.0f * std::log2(freq / 440.0f);
 
-            int noteNum = roundToInt(midiNote);
-            int chromaBin = ((noteNum % 12) + 12) % 12;
+                int noteNum = roundToInt(midiNote);
+                int chromaBin = ((noteNum % 12) + 12) % 12;
 
-            chroma[chromaBin] += peakMagnitudes[i];
+                chroma[chromaBin] += magnitudes[i];
+            }
         }
     }
 
