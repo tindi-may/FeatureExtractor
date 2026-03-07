@@ -43,8 +43,10 @@ AudioPlayer::~AudioPlayer()
     transportSource.setSource(nullptr);
 }
 
-void AudioPlayer::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
+void AudioPlayer::prepareToPlay(int samplesPerBlockExpected, double sr)
 {
+    blockSize = samplesPerBlockExpected;
+    sampleRate = sr;
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
 }
 
@@ -158,8 +160,14 @@ void AudioPlayer::changeState(TransportState newState)
             stopButton.setEnabled(false);
             playButton.setEnabled(true);
             transportSource.setPosition(0.0);
+            if (onPlaybackStopped != nullptr) {
+                onPlaybackStopped();
+            }
             break;
         case Starting:
+            if (onPlaybackStarted != nullptr && readerSource != nullptr) {
+                onPlaybackStarted(sampleRate, blockSize);
+            }
             playButton.setEnabled(false);
             transportSource.start();
             break;
@@ -171,6 +179,13 @@ void AudioPlayer::changeState(TransportState newState)
             break;
         }
     }
+}
+
+void AudioPlayer::setInteractionEnabled(bool shouldBeEnabled)
+{
+    pathLabel.setEnabled(shouldBeEnabled);
+    openButton.setEnabled(shouldBeEnabled);
+    fileListBox.setEnabled(shouldBeEnabled);
 }
 
 void AudioPlayer::playButtonClicked() { changeState(Starting); }

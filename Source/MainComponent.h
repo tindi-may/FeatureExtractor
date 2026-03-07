@@ -20,6 +20,10 @@ public:
     void resized() override;
 
 private:
+    std::vector<Feature*> getActiveFeatures();
+    std::vector<Feature*> activeFeaturesLive;
+    void updateInterfaceState();
+
     void printMidi();
     void setMidiOutput(int index);
 

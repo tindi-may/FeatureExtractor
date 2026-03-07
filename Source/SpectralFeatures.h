@@ -47,7 +47,6 @@ public:
 	}
 
 	void createResultPackage(FeatureResult& featPackage) override {
-		DBG(mCurrentPitchHz);
 		featPackage.add("Fundamental Frequency", mCurrentPitchHz);
 	}
 

@@ -19,6 +19,10 @@ public:
     bool isPlaying() const;
 
     std::function<void(std::vector<File>)> onProcessRequested;
+    std::function<void(double, int)> onPlaybackStarted;
+    std::function<void()> onPlaybackStopped;
+
+    void setInteractionEnabled(bool shouldBeEnabled);
     void setProcessEnabled(bool shouldBeEnabled);
 
     int getNumRows() override;
@@ -26,6 +30,9 @@ public:
     void selectedRowsChanged(int lastRowSelected) override;
 
 private:
+    int blockSize = 512;
+    double sampleRate = 44100;
+
     enum TransportState { Stopped, Starting, Playing, Stopping };
     TransportState state;
 

@@ -10,7 +10,6 @@
 //live processing: spunta live input (input che voglio tipo mic) e monitor output (muta roba)
 //classe juce per input (audio settings)
 //facile convertire vst
-//overlap fft (ci mette più del doppio!)
 MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
 
@@ -25,6 +24,22 @@ MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressW
 
     audioPlayer.onProcessRequested = [this](std::vector<File> filesToProcess) {
         processFile(filesToProcess);
+        };
+
+    audioPlayer.onPlaybackStarted = [this](double sampleRate, int blockSize) {
+        activeFeaturesLive = getActiveFeatures();
+        for (auto* f : activeFeaturesLive) {
+            f->prepareToPlay(sampleRate, blockSize);
+        }
+
+        MessageManager::callAsync([this] { updateInterfaceState(); });
+        };
+
+    audioPlayer.onPlaybackStopped = [this] {
+        MessageManager::callAsync([this] {
+            updateInterfaceState();
+            activeFeaturesLive.clear();
+            });
         };
 
     addAndMakeVisible(midiTitleLabel);
@@ -99,11 +114,7 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 }
 
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) {
-
     audioPlayer.getNextAudioBlock(bufferToFill);
-
-    //usare active features/listeners anche qui?
-    //mentre in play disabled
 
     if (bufferToFill.buffer->getNumChannels() > 0 && bufferToFill.numSamples > 0) {
         if (audioPlayer.isPlaying()) {
@@ -114,18 +125,16 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 
             midiBuffer.clear();
             auto& features = featList.getFeatures();
-            for (int i = 0; i < features.size(); ++i) {
-                if (features[i] != nullptr && featList.isRowSelected(i)) {
-                    features[i]->processBlock(proxyBuffer);
+            for (auto f : activeFeaturesLive) {
+                    f->processBlock(proxyBuffer);
                     FeatureResult res;
-                    features[i]->getResult(res);
+                    f->getResult(res);
                     if (midiCheck.getToggleState()) {
-                        midiMapper.toMidi(res, features[i]->getName(), midiBuffer);
+                        midiMapper.toMidi(res, f->getName(), midiBuffer);
                     }
                     if (oscCheck.getToggleState()) {
-                        oscMapper.toOsc(res, features[i]->getName(), oscSender); //uso bundle o lascio cosi?
+                        oscMapper.toOsc(res, f->getName(), oscSender); //uso bundle o lascio cosi?
                     }
-                }
             }
             if (midiCheck.getToggleState() && !midiBuffer.isEmpty()) {
                 if (auto* output = deviceManager.getDefaultMidiOutput()) {
@@ -159,13 +168,7 @@ void MainComponent::run() {
         fileScrittura.deleteFile();
     } //se il file esistente aperto non funziona, mettere controllo boh
 
-    auto& features = featList.getFeatures();
-    std::vector<Feature*> activeFeatures;
-    for (int i = 0; i < features.size(); ++i) {
-        if (featList.isRowSelected(i)) {
-            activeFeatures.push_back(features[i]);
-        }
-    }
+    auto activeFeatures = getActiveFeatures();
 
     auto& functionals = funcList.getFunctionals();
     std::vector<Functional*> activeFunctionals;
@@ -254,6 +257,34 @@ void MainComponent::run() {
             });
     }
         
+}
+
+void MainComponent::updateInterfaceState() {
+    bool isPlaying = audioPlayer.isPlaying();
+    bool isBatchProcessing = isThreadRunning();
+
+    bool shouldBeEnabled = !isPlaying && !isBatchProcessing;
+
+    featList.setEnabled(shouldBeEnabled);
+    funcList.setEnabled(shouldBeEnabled);
+    oscIPEditor.setEnabled(shouldBeEnabled);
+    oscPortEditor.setEnabled(shouldBeEnabled);
+    midiCheck.setEnabled(shouldBeEnabled);
+    oscCheck.setEnabled(shouldBeEnabled);
+    midiOutputList.setEnabled(shouldBeEnabled);
+    csvPathButton.setEnabled(shouldBeEnabled);
+    audioPlayer.setInteractionEnabled(shouldBeEnabled);
+}
+
+std::vector<Feature*> MainComponent::getActiveFeatures() {
+    std::vector<Feature*> active;
+    auto& allFeatures = featList.getFeatures();
+    for (int i = 0; i < allFeatures.size(); ++i) {
+        if (featList.isRowSelected(i)) {
+            active.push_back(allFeatures[i]);
+        }
+    }
+    return active;
 }
 
 void MainComponent::pathButtonClicked()
