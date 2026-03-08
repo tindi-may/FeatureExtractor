@@ -3,7 +3,6 @@
 #include "SpectralFeatures.h"
 
 //uml diagram boh schema di flusso
-//picchi chromagram
 //classe mia che fa tutto e main component chiama solo i metodi
 //sistemare mapping 
 //sr dei msg midi/osc (FARE bundle)
@@ -12,6 +11,19 @@
 //facile convertire vst
 MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+
+    addAndMakeVisible(liveInputCheck);
+    liveInputCheck.setButtonText("");
+    liveInputCheck.onClick = [this] { if (liveInputCheck.getToggleState()) {
+        updateInterfaceState();
+        liveBool = true;
+    } else {
+        liveBool = false;
+        updateInterfaceState();}
+    };
+    addAndMakeVisible(monitorButton);
+    monitorButton.setButtonText("Monitor");
+    monitorButton.setColour(TextButton::buttonColourId, Colours::blue);
 
     addAndMakeVisible(audioPlayer);
     addAndMakeVisible(&csvPathButton);
@@ -114,7 +126,9 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 }
 
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) {
-    audioPlayer.getNextAudioBlock(bufferToFill);
+    if (!liveBool) {
+        audioPlayer.getNextAudioBlock(bufferToFill); //basta togliere questo e ho monitor
+    }
 
     if (bufferToFill.buffer->getNumChannels() > 0 && bufferToFill.numSamples > 0) {
         if (audioPlayer.isPlaying()) {
@@ -262,8 +276,9 @@ void MainComponent::run() {
 void MainComponent::updateInterfaceState() {
     bool isPlaying = audioPlayer.isPlaying();
     bool isBatchProcessing = isThreadRunning();
+    bool isLiveInput = liveInputCheck.getToggleState();
 
-    bool shouldBeEnabled = !isPlaying && !isBatchProcessing;
+    bool shouldBeEnabled = !isPlaying && !isBatchProcessing && !isLiveInput;
 
     featList.setEnabled(shouldBeEnabled);
     funcList.setEnabled(shouldBeEnabled);
@@ -318,6 +333,11 @@ void MainComponent::resized() {
     auto centerColumn = area.reduced(10, 0);
 
     audioPlayer.setBounds(leftColumn.removeFromTop(500));
+
+    leftColumn.removeFromLeft(60);
+    liveInputCheck.setBounds(leftColumn.removeFromTop(30));
+    leftColumn.removeFromTop(-60);
+    monitorButton.setBounds(leftColumn.removeFromLeft(110).withSizeKeepingCentre(60,30));
 
     featList.setBounds(centerColumn.removeFromTop(200));
     centerColumn.removeFromTop(10);

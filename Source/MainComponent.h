@@ -27,6 +27,11 @@ private:
     void printMidi();
     void setMidiOutput(int index);
 
+    //live input
+    ToggleButton liveInputCheck;
+    TextButton monitorButton;
+    bool liveBool = false;
+    
     AudioPlayer audioPlayer;
     AudioFormatManager formatManager;
 
