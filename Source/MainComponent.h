@@ -30,8 +30,9 @@ private:
     //live input
     ToggleButton liveInputCheck;
     TextButton monitorButton;
-    bool liveBool = false;
-    
+    std::atomic<bool> liveBool = false;
+    TextButton settingsButton;
+    std::atomic<bool> monitorBool = false;
     AudioPlayer audioPlayer;
     AudioFormatManager formatManager;
 

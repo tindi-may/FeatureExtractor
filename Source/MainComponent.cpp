@@ -6,24 +6,50 @@
 //classe mia che fa tutto e main component chiama solo i metodi
 //sistemare mapping 
 //sr dei msg midi/osc (FARE bundle)
-//live processing: spunta live input (input che voglio tipo mic) e monitor output (muta roba)
-//classe juce per input (audio settings)
 //facile convertire vst
 MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
 
-    addAndMakeVisible(liveInputCheck);
-    liveInputCheck.setButtonText("");
-    liveInputCheck.onClick = [this] { if (liveInputCheck.getToggleState()) {
-        updateInterfaceState();
-        liveBool = true;
-    } else {
-        liveBool = false;
-        updateInterfaceState();}
-    };
+    addAndMakeVisible(settingsButton);
+    settingsButton.setButtonText("Audio Settings...");
+    settingsButton.onClick = [this] {
+        auto* selector = new AudioDeviceSelectorComponent(deviceManager, 1, 2, 1, 2, false, false, false,false); 
+        selector->setSize(500, 450);
+        DialogWindow::LaunchOptions options;
+        options.content.setOwned(selector);
+        options.dialogTitle = "Audio Settings";
+        options.componentToCentreAround = this;
+        options.launchAsync();
+        };
+
     addAndMakeVisible(monitorButton);
     monitorButton.setButtonText("Monitor");
-    monitorButton.setColour(TextButton::buttonColourId, Colours::blue);
+    monitorButton.setColour(TextButton::buttonColourId, Colours::darkblue.withAlpha(0.5f));
+
+    monitorButton.onClick = [this] {
+        monitorBool = !monitorBool;
+
+        if (monitorBool) {
+            monitorButton.setColour(TextButton::buttonColourId, Colours::dodgerblue);
+        }
+        else {
+            monitorButton.setColour(TextButton::buttonColourId, Colours::darkblue.withAlpha(0.5f));
+        }
+        };
+
+    addAndMakeVisible(liveInputCheck);
+    liveInputCheck.setButtonText("");
+    liveInputCheck.onClick = [this] {
+        liveBool = liveInputCheck.getToggleState();
+        if (liveBool) {
+            auto setup = deviceManager.getAudioDeviceSetup();
+            activeFeaturesLive = getActiveFeatures();
+            for (auto* f : activeFeaturesLive) {
+                f->prepareToPlay(setup.sampleRate, setup.bufferSize);
+            }
+        }
+        updateInterfaceState();
+        };
 
     addAndMakeVisible(audioPlayer);
     addAndMakeVisible(&csvPathButton);
@@ -103,6 +129,8 @@ MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressW
 
     setSize(800, 600);
 
+    deviceManager.initialise(2, 2, nullptr, true);
+
     if (RuntimePermissions::isRequired(RuntimePermissions::recordAudio)
         && !RuntimePermissions::isGranted(RuntimePermissions::recordAudio)) {
         RuntimePermissions::request(RuntimePermissions::recordAudio,
@@ -127,11 +155,12 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) {
     if (!liveBool) {
-        audioPlayer.getNextAudioBlock(bufferToFill); //basta togliere questo e ho monitor
+        bufferToFill.clearActiveBufferRegion();
+        audioPlayer.getNextAudioBlock(bufferToFill);
     }
 
     if (bufferToFill.buffer->getNumChannels() > 0 && bufferToFill.numSamples > 0) {
-        if (audioPlayer.isPlaying()) {
+        if (audioPlayer.isPlaying() || liveBool) {
             juce::AudioBuffer<float> proxyBuffer(bufferToFill.buffer->getArrayOfWritePointers(),
                 bufferToFill.buffer->getNumChannels(),
                 bufferToFill.startSample,
@@ -140,20 +169,24 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
             midiBuffer.clear();
             auto& features = featList.getFeatures();
             for (auto f : activeFeaturesLive) {
-                    f->processBlock(proxyBuffer);
-                    FeatureResult res;
-                    f->getResult(res);
-                    if (midiCheck.getToggleState()) {
-                        midiMapper.toMidi(res, f->getName(), midiBuffer);
-                    }
-                    if (oscCheck.getToggleState()) {
-                        oscMapper.toOsc(res, f->getName(), oscSender); //uso bundle o lascio cosi?
-                    }
+                f->processBlock(proxyBuffer);
+                FeatureResult res;
+                f->getResult(res);
+                if (midiCheck.getToggleState()) {
+                    midiMapper.toMidi(res, f->getName(), midiBuffer);
+                }
+                if (oscCheck.getToggleState()) {
+                    oscMapper.toOsc(res, f->getName(), oscSender); //uso bundle o lascio cosi?
+                }
             }
             if (midiCheck.getToggleState() && !midiBuffer.isEmpty()) {
                 if (auto* output = deviceManager.getDefaultMidiOutput()) {
                     output->sendBlockOfMessagesNow(midiBuffer);
                 }
+            }
+
+            if (liveBool && !monitorBool) {
+                bufferToFill.clearActiveBufferRegion(); //zitto
             }
         }
     }
@@ -332,11 +365,14 @@ void MainComponent::resized() {
 
     auto centerColumn = area.reduced(10, 0);
 
+    settingsButton.setBounds(leftColumn.removeFromTop(30));
+    leftColumn.removeFromTop(10);
+
     audioPlayer.setBounds(leftColumn.removeFromTop(500));
 
     leftColumn.removeFromLeft(60);
     liveInputCheck.setBounds(leftColumn.removeFromTop(30));
-    leftColumn.removeFromTop(-60);
+    leftColumn.removeFromTop(-4);
     monitorButton.setBounds(leftColumn.removeFromLeft(110).withSizeKeepingCentre(60,30));
 
     featList.setBounds(centerColumn.removeFromTop(200));
