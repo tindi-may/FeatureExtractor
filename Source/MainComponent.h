@@ -7,7 +7,7 @@
 #include "FunctionalList.h"
 #include "FeatureList.h"
 
-class MainComponent  : public AudioAppComponent, public ThreadWithProgressWindow {
+class MainComponent  : public AudioAppComponent, public ThreadWithProgressWindow, public juce::MenuBarModel {
 public:
     MainComponent();
     ~MainComponent() override;
@@ -19,7 +19,18 @@ public:
     void paint(juce::Graphics& g) override;
     void resized() override;
 
+    StringArray getMenuBarNames() override;
+    PopupMenu getMenuForIndex(int menuIndex, const String& menuName) override;
+    void menuItemSelected(int menuID, int menuIndex) override;
+
 private:
+    std::unique_ptr<juce::MenuBarComponent> menuBar;
+
+    enum MenuIDs {
+        AudioSettings = 1,
+        ExitApp
+    };
+
     AudioVisualiserComponent waveViewer{ 1 }; //lascio un canale??? o ne voglio due visto che una feature è il pan??????????
 
     std::vector<Feature*> getActiveFeatures();
@@ -33,7 +44,6 @@ private:
     ToggleButton liveInputCheck;
     TextButton monitorButton;
     std::atomic<bool> liveBool = false;
-    TextButton settingsButton;
     std::atomic<bool> monitorBool = false;
     AudioPlayer audioPlayer;
     AudioFormatManager formatManager;

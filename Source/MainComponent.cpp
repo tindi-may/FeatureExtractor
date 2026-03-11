@@ -4,12 +4,16 @@
 
 //uml diagram boh schema di flusso
 // sistemare disabilitamento ui
+// aggiungere feature easy
 // sistemare resize finestra o disabilitare ?
 //classe mia che fa tutto e main component chiama solo i metodi
 //sistemare mapping 
 //facile convertire vst
 MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+
+    menuBar = std::make_unique<juce::MenuBarComponent>(this);
+    addAndMakeVisible(menuBar.get());
 
     addAndMakeVisible(waveViewer);
     waveViewer.setColours(Colours::black, Colours::green);
@@ -26,18 +30,6 @@ MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressW
     rateLabel.setText("Message Rate:", dontSendNotification);
     rateLabel.attachToComponent(&rateSlider, false);
     rateLabel.setJustificationType(juce::Justification::centred);
-
-    addAndMakeVisible(settingsButton);
-    settingsButton.setButtonText("Audio Settings...");
-    settingsButton.onClick = [this] {
-        auto* selector = new AudioDeviceSelectorComponent(deviceManager, 1, 2, 1, 2, false, false, false,false); 
-        selector->setSize(500, 450);
-        DialogWindow::LaunchOptions options;
-        options.content.setOwned(selector);
-        options.dialogTitle = "Audio Settings";
-        options.componentToCentreAround = this;
-        options.launchAsync();
-        };
 
     addAndMakeVisible(monitorButton);
     monitorButton.setButtonText("Monitor");
@@ -155,6 +147,33 @@ MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressW
     }
     else {
         setAudioChannels(2, 2);
+    }
+}
+
+juce::StringArray MainComponent::getMenuBarNames() {
+    return { "Options" };
+}
+
+juce::PopupMenu MainComponent::getMenuForIndex(int menuIndex, const juce::String& menuName) {
+    juce::PopupMenu menu;
+
+    if (menuName == "Options") {
+        menu.addItem(AudioSettings, "Impostazioni Audio...");
+    }
+
+    return menu;
+}
+
+void MainComponent::menuItemSelected(int menuID, int menuIndex) {
+    if (menuID == AudioSettings) {
+        
+        auto* selector = new AudioDeviceSelectorComponent(deviceManager, 1, 2, 1, 2, false, false, false, false);
+        selector->setSize(500, 450);
+        DialogWindow::LaunchOptions options;
+        options.content.setOwned(selector);
+        options.dialogTitle = "Audio Settings";
+        options.componentToCentreAround = this;
+        options.launchAsync();
     }
 }
 
@@ -384,11 +403,14 @@ void MainComponent::releaseResources() {
 }
 
 void MainComponent::resized() {
-    auto area = getLocalBounds().reduced(20);
+    auto area = getLocalBounds();
+
+    menuBar->setBounds(area.removeFromTop(25));
+
+    area.reduce(20, 20);
     auto columnWidth = area.getWidth() / 3.0f;
 
     auto leftColumn = area.removeFromLeft(columnWidth).reduced(10, 0);
-    settingsButton.setBounds(leftColumn.removeFromTop(30));
     leftColumn.removeFromTop(10);
 
     audioPlayer.setBounds(leftColumn.removeFromTop(480));
@@ -396,11 +418,10 @@ void MainComponent::resized() {
 
     auto liveRow = leftColumn.removeFromTop(30);
     liveInputCheck.setBounds(liveRow.removeFromLeft(30));
-    juce::Label* l = new juce::Label(); 
     monitorButton.setBounds(liveRow.removeFromLeft(100).reduced(2));
 
     auto rightColumn = area.removeFromRight(columnWidth).reduced(10, 0);
-
+    rightColumn.removeFromTop(35);
     waveViewer.setBounds(rightColumn.removeFromTop(120));
     rightColumn.removeFromTop(20);
 
