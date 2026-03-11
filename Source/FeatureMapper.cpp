@@ -8,16 +8,16 @@ void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiM
 
     if (name == "PAN") {
         auto panCC = roundToInt(jlimit(0.0f, 127.0f, jmap(val, -1.0f, 1.0f, 0.0f, 127.0f)));
-        auxMidi.addEvent(MidiMessage::controllerEvent(1, 10, panCC), 0);
+        midiMessages.addEvent(MidiMessage::controllerEvent(1, 10, panCC), 0);
     }
     else if (name == "Brightness") {
         auto brightCC = roundToInt(jlimit(0.0f, 127.0f, jmap(log(jlimit(20.0f, 20000.0f, val)), log(20.0f), log(20000.0f), 0.0f, 127.0f)));
-        auxMidi.addEvent(MidiMessage::controllerEvent(1, 74, brightCC), 0);
+        midiMessages.addEvent(MidiMessage::controllerEvent(1, 74, brightCC), 0);
     }
     else if (name == "RRMS") {
         float dbRms = Decibels::gainToDecibels(val, -48.0f);
         auto rmsValue = jlimit(1, 127, roundToInt(jmap(dbRms, -48.0f, 0.0f, 1.0f, 127.0f)));
-        auxMidi.addEvent(MidiMessage::controllerEvent(1, 7, rmsValue), 0);
+        midiMessages.addEvent(MidiMessage::controllerEvent(1, 7, rmsValue), 0);
     }
     else if (name == "Fundamental frequency") { // nota singola
         if (val > 20.0f) {
@@ -44,12 +44,11 @@ void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiM
     //spectral moments cc general purpose
 
 
-    midiMessages.swapWith(auxMidi);
+    midiMessages.swapWith(midiMessages);
 }
 
 void OscMapper::toOsc(const FeatureResult& res, String name, OSCSender& sender) {
     if (res.isEmpty()) return;
-
     String address = "/feature/" + name.replace(" ", "_");
     OSCMessage msg{ OSCAddressPattern(address) };
 

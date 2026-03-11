@@ -3,12 +3,23 @@
 #include "SpectralFeatures.h"
 
 //uml diagram boh schema di flusso
+// sistemare disabilitamento ui
+// visualizzatore
 //classe mia che fa tutto e main component chiama solo i metodi
 //sistemare mapping 
-//sr dei msg midi/osc (FARE bundle)
 //facile convertire vst
 MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+
+    addAndMakeVisible(rateSlider);
+    rateSlider.setRange(10.0, 100.0, 1.0); 
+    rateSlider.setValue(20.0);
+    rateSlider.setTextValueSuffix(" Hz");
+    rateSlider.onValueChange = [this] { updateRate = rateSlider.getValue(); };
+
+    addAndMakeVisible(rateLabel);
+    rateLabel.setText("Message Rate:", dontSendNotification);
+    rateLabel.attachToComponent(&rateSlider, true);
 
     addAndMakeVisible(settingsButton);
     settingsButton.setButtonText("Audio Settings...");
@@ -146,6 +157,8 @@ MainComponent::~MainComponent() {
 }
 
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
+    sr = sampleRate;
+    sampleCount = sr / updateRate;
     audioPlayer.prepareToPlay(samplesPerBlockExpected, sampleRate);
     auto& features = featList.getFeatures();
     for (int i = 0; i < features.size(); ++i) {
@@ -166,23 +179,31 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
                 bufferToFill.startSample,
                 bufferToFill.numSamples);
 
+            sampleCount -= bufferToFill.numSamples;
+            
             midiBuffer.clear();
             auto& features = featList.getFeatures();
             for (auto f : activeFeaturesLive) {
                 f->processBlock(proxyBuffer);
                 FeatureResult res;
                 f->getResult(res);
-                if (midiCheck.getToggleState()) {
-                    midiMapper.toMidi(res, f->getName(), midiBuffer);
-                }
-                if (oscCheck.getToggleState()) {
-                    oscMapper.toOsc(res, f->getName(), oscSender); //uso bundle o lascio cosi?
+                if (sampleCount <= 0) {
+                    if (midiCheck.getToggleState()) {
+                        midiMapper.toMidi(res, f->getName(), midiBuffer);
+                    }
+                    if (oscCheck.getToggleState()) {
+                       oscMapper.toOsc(res, f->getName(),oscSender);
+                    }
                 }
             }
-            if (midiCheck.getToggleState() && !midiBuffer.isEmpty()) {
-                if (auto* output = deviceManager.getDefaultMidiOutput()) {
-                    output->sendBlockOfMessagesNow(midiBuffer);
+            if (sampleCount <= 0) {
+                if (midiCheck.getToggleState() && !midiBuffer.isEmpty()) {
+                    if (auto* output = deviceManager.getDefaultMidiOutput()) {
+                        output->sendBlockOfMessagesNow(midiBuffer);
+                    }
                 }
+
+                sampleCount = sr / updateRate;
             }
 
             if (liveBool && !monitorBool) {
@@ -397,6 +418,9 @@ void MainComponent::resized() {
     oscIPEditor.setBounds(rightColumn.removeFromTop(30));
     rightColumn.removeFromTop(25);
     oscPortEditor.setBounds(rightColumn.removeFromTop(30));
+
+    rightColumn.removeFromTop(20);
+    rateSlider.setBounds(rightColumn.removeFromTop(30).reduced(10, 0));
 }
 
 void MainComponent::paint(juce::Graphics& g) {

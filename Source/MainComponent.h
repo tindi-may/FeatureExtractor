@@ -45,6 +45,13 @@ private:
     FuncList funcList;
     FeatList featList;
 
+    //sample rate
+    Slider rateSlider;
+    Label rateLabel;
+    double sr;
+    double updateRate = 50.0;
+    int sampleCount = 0;
+
     //midi
     AudioDeviceManager deviceManager; //gestione midi i/o
     ComboBox midiOutputList; //midi out list for user selection
