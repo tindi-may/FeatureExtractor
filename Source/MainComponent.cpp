@@ -4,12 +4,17 @@
 
 //uml diagram boh schema di flusso
 // sistemare disabilitamento ui
-// visualizzatore
+// sistemare resize finestra o disabilitare ?
 //classe mia che fa tutto e main component chiama solo i metodi
 //sistemare mapping 
 //facile convertire vst
 MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
     csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+
+    addAndMakeVisible(waveViewer);
+    waveViewer.setColours(Colours::black, Colours::green);
+    waveViewer.setRepaintRate(30);
+    waveViewer.setSamplesPerBlock(256);
 
     addAndMakeVisible(rateSlider);
     rateSlider.setRange(10.0, 100.0, 1.0); 
@@ -19,7 +24,8 @@ MainComponent::MainComponent() : audioPlayer(formatManager), ThreadWithProgressW
 
     addAndMakeVisible(rateLabel);
     rateLabel.setText("Message Rate:", dontSendNotification);
-    rateLabel.attachToComponent(&rateSlider, true);
+    rateLabel.attachToComponent(&rateSlider, false);
+    rateLabel.setJustificationType(juce::Justification::centred);
 
     addAndMakeVisible(settingsButton);
     settingsButton.setButtonText("Audio Settings...");
@@ -171,6 +177,8 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
         bufferToFill.clearActiveBufferRegion();
         audioPlayer.getNextAudioBlock(bufferToFill);
     }
+
+    waveViewer.pushBuffer(bufferToFill);
 
     if (bufferToFill.buffer->getNumChannels() > 0 && bufferToFill.numSamples > 0) {
         if (audioPlayer.isPlaying() || liveBool) {
@@ -377,50 +385,52 @@ void MainComponent::releaseResources() {
 
 void MainComponent::resized() {
     auto area = getLocalBounds().reduced(20);
-
     auto columnWidth = area.getWidth() / 3.0f;
 
     auto leftColumn = area.removeFromLeft(columnWidth).reduced(10, 0);
-
-    auto rightColumn = area.removeFromRight(columnWidth).reduced(10, 0);
-
-    auto centerColumn = area.reduced(10, 0);
-
     settingsButton.setBounds(leftColumn.removeFromTop(30));
     leftColumn.removeFromTop(10);
 
-    audioPlayer.setBounds(leftColumn.removeFromTop(500));
+    audioPlayer.setBounds(leftColumn.removeFromTop(480));
+    leftColumn.removeFromTop(10);
 
-    leftColumn.removeFromLeft(60);
-    liveInputCheck.setBounds(leftColumn.removeFromTop(30));
-    leftColumn.removeFromTop(-4);
-    monitorButton.setBounds(leftColumn.removeFromLeft(110).withSizeKeepingCentre(60,30));
+    auto liveRow = leftColumn.removeFromTop(30);
+    liveInputCheck.setBounds(liveRow.removeFromLeft(30));
+    juce::Label* l = new juce::Label(); 
+    monitorButton.setBounds(liveRow.removeFromLeft(100).reduced(2));
 
+    auto rightColumn = area.removeFromRight(columnWidth).reduced(10, 0);
+
+    waveViewer.setBounds(rightColumn.removeFromTop(120));
+    rightColumn.removeFromTop(20);
+
+    auto midiHeader = rightColumn.removeFromTop(40);
+    midiTitleLabel.setBounds(midiHeader.removeFromLeft(50));
+    midiCheck.setBounds(midiHeader.removeFromLeft(30).withSizeKeepingCentre(30, 30));
+    rightColumn.removeFromTop(15);
+    midiOutputList.setBounds(rightColumn.removeFromTop(30));
+    rightColumn.removeFromTop(20);
+
+    auto oscHeader = rightColumn.removeFromTop(40);
+    oscTitleLabel.setBounds(oscHeader.removeFromLeft(50));
+    oscCheck.setBounds(oscHeader.removeFromLeft(30).withSizeKeepingCentre(30, 30));
+
+    rightColumn.removeFromTop(15);
+    oscIPEditor.setBounds(rightColumn.removeFromTop(30));
+    rightColumn.removeFromTop(25); 
+    oscPortEditor.setBounds(rightColumn.removeFromTop(30));
+    rightColumn.removeFromTop(30);
+
+    rateLabel.setBounds(rightColumn.removeFromTop(20));
+    rateSlider.setBounds(rightColumn.removeFromTop(30));
+
+    auto centerColumn = area.reduced(10, 0);
     featList.setBounds(centerColumn.removeFromTop(200));
     centerColumn.removeFromTop(10);
     funcList.setBounds(centerColumn.removeFromTop(200));
     centerColumn.removeFromTop(20);
     csvLabel.setBounds(centerColumn.removeFromTop(30));
     csvPathButton.setBounds(centerColumn.removeFromTop(40).reduced(0, 2));
-
-    auto midiHeaderArea = rightColumn.removeFromTop(40);
-    midiTitleLabel.setBounds(midiHeaderArea.removeFromLeft(50));
-    midiCheck.setBounds(midiHeaderArea.removeFromLeft(30).withSizeKeepingCentre(30, 30));
-    rightColumn.removeFromTop(15);
-    midiOutputList.setBounds(rightColumn.removeFromTop(30));
-
-    rightColumn.removeFromTop(30); 
-
-    auto oscHeaderArea = rightColumn.removeFromTop(40);
-    oscTitleLabel.setBounds(oscHeaderArea.removeFromLeft(50));
-    oscCheck.setBounds(oscHeaderArea.removeFromLeft(30).withSizeKeepingCentre(30, 30));
-    rightColumn.removeFromTop(15);
-    oscIPEditor.setBounds(rightColumn.removeFromTop(30));
-    rightColumn.removeFromTop(25);
-    oscPortEditor.setBounds(rightColumn.removeFromTop(30));
-
-    rightColumn.removeFromTop(20);
-    rateSlider.setBounds(rightColumn.removeFromTop(30).reduced(10, 0));
 }
 
 void MainComponent::paint(juce::Graphics& g) {

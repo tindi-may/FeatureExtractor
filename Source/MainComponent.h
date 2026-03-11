@@ -20,6 +20,8 @@ public:
     void resized() override;
 
 private:
+    AudioVisualiserComponent waveViewer{ 1 }; //lascio un canale??? o ne voglio due visto che una feature è il pan??????????
+
     std::vector<Feature*> getActiveFeatures();
     std::vector<Feature*> activeFeaturesLive;
     void updateInterfaceState();
