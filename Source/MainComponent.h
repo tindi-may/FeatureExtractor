@@ -1,13 +1,14 @@
 #pragma once
 #include <JuceHeader.h>
-#include "Features.h"
-#include "Functionals.h"
-#include "FeatureMapper.h"
-#include "AudioPlayer.h"
+//#include "Features.h"
+//#include "Functionals.h"
+//#include "FeatureMapper.h"
+//#include "AudioPlayer.h"
 #include "FunctionalList.h"
 #include "FeatureList.h"
+#include "ExtractionEngine.h"
 
-class MainComponent  : public AudioAppComponent, public ThreadWithProgressWindow, public juce::MenuBarModel {
+class MainComponent  : public AudioAppComponent, /*, public ThreadWithProgressWindow, */public MenuBarModel {
 public:
     MainComponent();
     ~MainComponent() override;
@@ -24,6 +25,8 @@ public:
     void menuItemSelected(int menuID, int menuIndex) override;
 
 private:
+    MyFeatureExtractor extractor;
+
     std::unique_ptr<juce::MenuBarComponent> menuBar;
 
     enum MenuIDs {
@@ -31,27 +34,26 @@ private:
         ExitApp
     };
 
-    AudioVisualiserComponent waveViewer{ 1 }; //lascio un canale??? o ne voglio due visto che una feature è il pan??????????
+    AudioVisualiserComponent waveViewer{ 1 }; //lascio un canale??? o ne voglio due visto che una feature l pan??????????
 
-    std::vector<Feature*> getActiveFeatures();
-    std::vector<Feature*> activeFeaturesLive;
+    //std::vector<Feature*> getActiveFeatures();
+    //std::vector<Feature*> activeFeaturesLive;
     void updateInterfaceState();
 
-    void printMidi();
-    void setMidiOutput(int index);
+    /*void setMidiOutput(int index);*/
 
     //live input
     ToggleButton liveInputCheck;
     TextButton monitorButton;
-    std::atomic<bool> liveBool = false;
-    std::atomic<bool> monitorBool = false;
-    AudioPlayer audioPlayer;
-    AudioFormatManager formatManager;
+    //std::atomic<bool> liveBool = false;
+    //std::atomic<bool> monitorBool = false;
+    //AudioPlayer audioPlayer;
+    //AudioFormatManager formatManager;
 
     //batch roba
-    void processFile(std::vector<File> filesToProcess);
-    std::vector<File> filesToProcessRun;
-    void run() override;
+    //void processFile(std::vector<File> filesToProcess);
+    //std::vector<File> filesToProcessRun;
+    //void run() override;
 
     Label csvLabel;
     FuncList funcList;
@@ -60,33 +62,34 @@ private:
     //sample rate
     Slider rateSlider;
     Label rateLabel;
-    double sr;
-    double updateRate = 50.0;
-    int sampleCount = 0;
+    //double sr;
+    //double updateRate = 50.0;
+    //int sampleCount = 0;
 
     //midi
-    AudioDeviceManager deviceManager; //gestione midi i/o
+    
     ComboBox midiOutputList; //midi out list for user selection
     Label midiOutputListLabel;
-    int lastOutputIndex = 0;
     ToggleButton midiCheck;
-    MidiBuffer midiBuffer;
-    MidiMapper midiMapper;
+    //int lastOutputIndex = 0;
+    //MidiBuffer midiBuffer;
+    //MidiMapper midiMapper;
+    //AudioDeviceManager deviceManager; //gestione midi i/o
     Label midiTitleLabel;
 
     //osc 
-    OSCSender oscSender;
-    String oscIP = "127.0.0.1";
-    int oscPort = 9001;
+    //OscMapper oscMapper;
+    //OSCSender oscSender;
+    //String oscIP = "127.0.0.1";
+    //int oscPort = 9001;
     Label oscIPLabel, oscPortLabel;
     TextEditor oscIPEditor, oscPortEditor;
-    OscMapper oscMapper;
     ToggleButton oscCheck;
     Label oscTitleLabel;
 
     //csv
     TextButton csvPathButton;
-    String csvPath;
+    //String csvPath;
     void pathButtonClicked();
     std::unique_ptr<FileChooser> chooser;
 

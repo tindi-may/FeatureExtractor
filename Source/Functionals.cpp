@@ -43,13 +43,13 @@ void Median::store(const FeatureResult& res)
 
 FeatureResult Median::getResult() {
     FeatureResult res;
-    //non ho messo controllo per mediana pari nn so se serve perchè ci sono tanti numeri
+    //non ho messo controllo per mediana pari nn so se serve perchi sono tanti numeri
     if (values.empty() || values[0].empty()) return res;
 
     for (int i = 0; i < values.size(); ++i) {
         auto& v = values[i];
         int n = round(v.size() / 2);
-        //prima avevo usato sort, questo è meglio
+        //prima avevo usato sort, questo  meglio
         std::nth_element(v.begin(), v.begin() + n, v.end());
 
         float medianVal = v[n];
