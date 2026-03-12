@@ -186,6 +186,10 @@ void AudioPlayer::setInteractionEnabled(bool shouldBeEnabled)
     pathLabel.setEnabled(shouldBeEnabled);
     openButton.setEnabled(shouldBeEnabled);
     fileListBox.setEnabled(shouldBeEnabled);
+
+    processButton.setEnabled(shouldBeEnabled && !currentFileList.empty());
+
+    playButton.setEnabled(shouldBeEnabled && readerSource != nullptr);
 }
 
 void AudioPlayer::playButtonClicked() { changeState(Starting); }

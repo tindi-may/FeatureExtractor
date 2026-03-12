@@ -1,26 +1,30 @@
 #include "ExtractionEngine.h"
+#include "TemporalFeatures.h"
+#include "SpectralFeatures.h"
 
+#define BATCH_BLOCK_SIZE 4096
+#define CSV_FILE_NAME "AnalisiBatch.csv"
 
 MyFeatureExtractor::MyFeatureExtractor() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
 	csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
 
     audioPlayer.onProcessRequested = [this](std::vector<File> filesToProcess) {
+        if (onStateChanged) onStateChanged();
         processFile(filesToProcess);
     };
 
     audioPlayer.onPlaybackStarted = [this](double sampleRate, int blockSize) {
-        activeFeaturesLive = getActiveFeatures();
-        for (auto* f : activeFeaturesLive) {
+        for (auto* f : activeFeatures) {
             f->prepareToPlay(sampleRate, blockSize);
         }
-        //MessageManager::callAsync([this] { updateInterfaceState(); });
     };
 
     audioPlayer.onPlaybackStopped = [this] {
-        MessageManager::callAsync([this] {
-            activeFeaturesLive.clear();
-            });
+        if (onStateChanged) onStateChanged();
     };
+
+    auto midiOutputs = MidiOutput::getAvailableDevices();
+    for (auto output : midiOutputs) midiOutputNames.add(output.name);
 
     formatManager.registerBasicFormats();
 
@@ -28,17 +32,27 @@ MyFeatureExtractor::MyFeatureExtractor() : audioPlayer(formatManager), ThreadWit
         AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Connection error", "Error: could not send OSC message.", "OK");
     }
+
+    deviceManager.initialise(2, 2, nullptr, true);
 }
 
-std::vector<Feature*> MyFeatureExtractor::getActiveFeatures() {
-    std::vector<Feature*> active;
-    auto& allFeatures = featList.getFeatures();
-    for (int i = 0; i < allFeatures.size(); ++i) {
-        if (featList.isRowSelected(i)) {
-            active.push_back(allFeatures[i]);
-        }
+bool MyFeatureExtractor::setMidiOutput(int index)
+{
+    auto list = MidiOutput::getAvailableDevices();
+    if (list.size() > 0)
+    {
+        auto newInput = list[index];
+        deviceManager.setDefaultMidiOutputDevice(newInput.identifier);
+        return true;
     }
-    return active;
+    return false;
+}
+
+void MyFeatureExtractor::prepareLiveFeatures() {
+    auto setup = deviceManager.getAudioDeviceSetup();
+    for (auto* f : activeFeatures) {
+        f->prepareToPlay(setup.sampleRate, setup.bufferSize);
+    }
 }
 
 void MyFeatureExtractor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) 
@@ -46,10 +60,6 @@ void MyFeatureExtractor::prepareToPlay(int samplesPerBlockExpected, double sampl
     sr = sampleRate;
     sampleCount = sr / updateRate;
     audioPlayer.prepareToPlay(samplesPerBlockExpected, sampleRate);
-    //auto& features = featList.getFeatures();
-    //for (int i = 0; i < features.size(); ++i) {
-    //    features[i]->prepareToPlay(sampleRate, samplesPerBlockExpected);
-    //}
 }
 
 void MyFeatureExtractor::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) {
@@ -68,22 +78,21 @@ void MyFeatureExtractor::getNextAudioBlock(const AudioSourceChannelInfo& bufferT
             sampleCount -= bufferToFill.numSamples;
 
             midiBuffer.clear();
-            auto& features = featList.getFeatures();
-            for (auto f : activeFeaturesLive) {
+            for (auto f : activeFeatures) {
                 f->processBlock(proxyBuffer);
                 FeatureResult res;
                 f->getResult(res);
                 if (sampleCount <= 0) {
-                    if (midiCheck.getToggleState()) {
+                    if (midiEnabled) {
                         midiMapper.toMidi(res, f->getName(), midiBuffer);
                     }
-                    if (oscCheck.getToggleState()) {
+                    if (oscEnabled) {
                         oscMapper.toOsc(res, f->getName(), oscSender);
                     }
                 }
             }
             if (sampleCount <= 0) {
-                if (midiCheck.getToggleState() && !midiBuffer.isEmpty()) {
+                if (midiEnabled && !midiBuffer.isEmpty()) {
                     if (auto* output = deviceManager.getDefaultMidiOutput()) {
                         output->sendBlockOfMessagesNow(midiBuffer);
                     }
@@ -91,15 +100,16 @@ void MyFeatureExtractor::getNextAudioBlock(const AudioSourceChannelInfo& bufferT
 
                 sampleCount = sr / updateRate;
             }
-
-            if (liveBool && !monitorBool) {
-                bufferToFill.clearActiveBufferRegion(); //zitto
-            }
         }
     }
+
+    if (onStateChanged) onStateChanged();
 }
 
 void MyFeatureExtractor::processFile(std::vector<File> filesToProcess) {
+    juce::MessageManager::callAsync([this] {
+        if (onPrepareForBatch) onPrepareForBatch();
+        });
     if (filesToProcess.empty()) return;
 
     filesToProcessRun = filesToProcess;
@@ -112,25 +122,14 @@ void MyFeatureExtractor::processFile(std::vector<File> filesToProcess) {
 void MyFeatureExtractor::run() {
     auto startTime = Time::getMillisecondCounterHiRes();
     bool processCancelled = false;
-    const int batchBlockSize = 4096; //macro
 
     String nomeCartella = filesToProcessRun[0].getParentDirectory().getFileName();
-    File fileScrittura = File(csvPath).getChildFile("Analisi_" + nomeCartella + ".csv");//macro
+    File fileScrittura = File(csvPath).getChildFile(CSV_FILE_NAME);//macro
 
-    //se esiste viene cancellato e quindi sostituito
     if (fileScrittura.existsAsFile()) {
         fileScrittura.deleteFile();
-    } //se il file esistente aperto non funziona, mettere controllo boh
-
-    auto activeFeatures = getActiveFeatures();
-
-    auto& functionals = funcList.getFunctionals();
-    std::vector<Functional*> activeFunctionals;
-    for (int j = 0; j < functionals.size(); ++j) {
-        if (funcList.isRowSelected(j)) {
-            activeFunctionals.push_back(functionals[j]);
-        }
     }
+
 
     if (auto outputStream = std::unique_ptr<FileOutputStream>(fileScrittura.createOutputStream())) {
 
@@ -151,13 +150,13 @@ void MyFeatureExtractor::run() {
             std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor(file));
             if (reader != nullptr) {
                 for (auto* f : activeFeatures) {
-                    f->prepareToPlay(reader->sampleRate, batchBlockSize);
+                    f->prepareToPlay(reader->sampleRate, BATCH_BLOCK_SIZE);
                 }
                 for (auto* func : activeFunctionals) {
                     func->reset();
                 }
 
-                AudioBuffer<float> buffer(reader->numChannels, batchBlockSize);
+                AudioBuffer<float> buffer(reader->numChannels, BATCH_BLOCK_SIZE);
                 int64 startSample = 0;
 
                 while (startSample < reader->lengthInSamples) {
@@ -165,7 +164,7 @@ void MyFeatureExtractor::run() {
                         processCancelled = true;
                         break;
                     }
-                    reader->read(&buffer, 0, batchBlockSize, startSample, true, true);
+                    reader->read(&buffer, 0, BATCH_BLOCK_SIZE, startSample, true, true);
                     FeatureResult featPackage;
                     for (auto* f : activeFeatures) {
                         f->processBlock(buffer);
@@ -174,7 +173,7 @@ void MyFeatureExtractor::run() {
                     for (auto* func : activeFunctionals) {
                         func->store(featPackage);
                     }
-                    startSample += batchBlockSize;
+                    startSample += BATCH_BLOCK_SIZE;
                 }
 
                 String riga = file.getFileName();
@@ -211,11 +210,9 @@ void MyFeatureExtractor::run() {
             NativeMessageBox::showMessageBoxAsync(AlertWindow::InfoIcon, "Success", message);
             });
     }
-
 }
 
 void MyFeatureExtractor::releaseResources() {
     audioPlayer.releaseResources();
-    auto& features = featList.getFeatures();
-    for (auto* f : features) f->releaseResources();
+    for (auto* f : activeFeatures) f->releaseResources();
 }

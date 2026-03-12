@@ -6,12 +6,9 @@
 // sistemare disabilitamento ui
 // aggiungere feature easy
 // sistemare resize finestra o disabilitare ?
-//classe mia che fa tutto e main component chiama solo i metodi
 //sistemare mapping 
 //facile convertire vst
 MainComponent::MainComponent() {
-    /*csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();*/
-
     menuBar = std::make_unique<juce::MenuBarComponent>(this);
     addAndMakeVisible(menuBar.get());
 
@@ -39,17 +36,32 @@ MainComponent::MainComponent() {
         monitorButton.setColour(TextButton::buttonColourId, extractor.isMonitorOn() ? Colours::dodgerblue : Colours::darkblue.withAlpha(0.5f));
     };
 
+    midiCheck.onClick = [this] { extractor.setMidiEnabled(midiCheck.getToggleState()); };
+    oscCheck.onClick = [this] { extractor.setOscEnabled(oscCheck.getToggleState()); };
+
     addAndMakeVisible(liveInputCheck);
     liveInputCheck.setButtonText("");
     liveInputCheck.onClick = [this] {
         extractor.setLiveMode(liveInputCheck.getToggleState());
 
         if (extractor.isLiveModeOn()) {
-            //engine.prepareLiveFeatures();
+            extractor.setActiveFeatures(getActiveFeatures());
+            extractor.prepareLiveFeatures();
         }
 
-        updateInterfaceState();
+        if (extractor.onStateChanged) extractor.onStateChanged();
     };
+
+
+    extractor.getAudioPlayer().onPlaybackStarted = [this](double sampleRate, int blockSize) {
+        extractor.setActiveFeatures(getActiveFeatures());
+        if (extractor.onStateChanged) extractor.onStateChanged();
+        };
+
+    extractor.onPrepareForBatch = [this] {
+        extractor.setActiveFeatures(getActiveFeatures());
+        extractor.setActiveFunctionals(getActiveFunctionals());
+        };
 
     addAndMakeVisible(extractor.getAudioPlayer());
     addAndMakeVisible(&csvPathButton);
@@ -60,27 +72,9 @@ MainComponent::MainComponent() {
     csvLabel.setText("Select CSV Path", dontSendNotification);
     csvLabel.setFont(Font(18.0f, Font::bold));
 
-    //audioPlayer.onProcessRequested = [this](std::vector<File> filesToProcess) {
-    //    processFile(filesToProcess);
-    //    };
-
-    extractor.onStateChanged = [this] { updateInterfaceState(); };
-
-    //audioPlayer.onPlaybackStarted = [this](double sampleRate, int blockSize) {
-    //    activeFeaturesLive = getActiveFeatures();
-    //    for (auto* f : activeFeaturesLive) {
-    //        f->prepareToPlay(sampleRate, blockSize);
-    //    }
-
-    //    //MessageManager::callAsync([this] { updateInterfaceState(); });
-    //    };
-
-    //audioPlayer.onPlaybackStopped = [this] {
-    //    MessageManager::callAsync([this] {
-    //        updateInterfaceState();
-    //        activeFeaturesLive.clear();
-    //        });
-    //    };
+    extractor.onStateChanged = [this] { juce::MessageManager::callAsync([this] {
+        updateInterfaceState();
+        }); };
 
     addAndMakeVisible(midiTitleLabel);
     midiTitleLabel.setText("MIDI", dontSendNotification);
@@ -127,23 +121,16 @@ MainComponent::MainComponent() {
     midiOutputListLabel.attachToComponent(&midiOutputList, false);
 
     addAndMakeVisible(midiOutputList);
-    auto midiOutputs = juce::MidiOutput::getAvailableDevices();
-    juce::StringArray midiOutputNames;
-    for (auto output : midiOutputs) midiOutputNames.add(output.name);
-    midiOutputList.addItemList(midiOutputNames, 1);
-    midiOutputList.onChange = [this] { setMidiOutput(midiOutputList.getSelectedItemIndex()); };
+    midiOutputList.addItemList(extractor.getMidiOutput(), 1);
+    midiOutputList.onChange = [this] {
+        if (extractor.setMidiOutput(midiOutputList.getSelectedItemIndex())) {
+            midiOutputList.setSelectedId(midiOutputList.getSelectedItemIndex() + 1, dontSendNotification);
+        }
+        };
 
-    if (midiOutputList.getSelectedId() == 0) { setMidiOutput(0); }
-
-    //formatManager.registerBasicFormats();
-
-    //if (!oscSender.connect(oscIP, oscPort)) {
-    //    AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-    //        "Connection error", "Error: could not send OSC message.", "OK"); }
+    if (midiOutputList.getSelectedId() == 0) { extractor.setMidiOutput(0); }
 
     setSize(800, 600);
-
-    deviceManager.initialise(2, 2, nullptr, true);
 
     if (RuntimePermissions::isRequired(RuntimePermissions::recordAudio)
         && !RuntimePermissions::isGranted(RuntimePermissions::recordAudio)) {
@@ -193,25 +180,53 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) {
     extractor.getNextAudioBlock(bufferToFill);
     waveViewer.pushBuffer(bufferToFill);
+    //monitor
+    if (extractor.isLiveModeOn() && !extractor.isMonitorOn()) {
+        bufferToFill.clearActiveBufferRegion();
+    }
 }
 
 void MainComponent::updateInterfaceState() {
-    //bool isPlaying = audioPlayer.isPlaying();
-    //bool isBatchProcessing = isThreadRunning();
-    //bool isLiveInput = liveInputCheck.getToggleState();
-    //bool shouldBeEnabled = !isPlaying && !isBatchProcessing && !isLiveInput;
     const bool shouldBeEnabled = extractor.canEditSettings();
-
 
     featList.setEnabled(shouldBeEnabled);
     funcList.setEnabled(shouldBeEnabled);
+
     oscIPEditor.setEnabled(shouldBeEnabled);
     oscPortEditor.setEnabled(shouldBeEnabled);
     midiCheck.setEnabled(shouldBeEnabled);
     oscCheck.setEnabled(shouldBeEnabled);
     midiOutputList.setEnabled(shouldBeEnabled);
+
+    rateSlider.setEnabled(shouldBeEnabled);
+    rateLabel.setEnabled(shouldBeEnabled);
+
     csvPathButton.setEnabled(shouldBeEnabled);
     extractor.getAudioPlayer().setInteractionEnabled(shouldBeEnabled);
+
+    liveInputCheck.setEnabled(!extractor.getAudioPlayer().isPlaying() && !extractor.isThreadRunning());
+}
+
+std::vector<Feature*> MainComponent::getActiveFeatures() {
+    std::vector<Feature*> active;
+    auto& allFeatures = featList.getFeatures();
+    for (int i = 0; i < allFeatures.size(); ++i) {
+        if (featList.isRowSelected(i)) {
+            active.push_back(allFeatures[i]);
+        }
+    }
+    return active;
+}
+
+std::vector<Functional*> MainComponent::getActiveFunctionals() {
+    std::vector<Functional*> active;
+    auto& allFunctionals = funcList.getFunctionals();
+    for (int i = 0; i < allFunctionals.size(); ++i) {
+        if (funcList.isRowSelected(i)) {
+            active.push_back(allFunctionals[i]);
+        }
+    }
+    return active;
 }
 
 void MainComponent::pathButtonClicked()
