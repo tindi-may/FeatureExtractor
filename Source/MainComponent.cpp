@@ -2,12 +2,6 @@
 #include "TemporalFeatures.h"
 #include "SpectralFeatures.h"
 
-//uml diagram boh schema di flusso
-// sistemare disabilitamento ui
-// aggiungere feature easy
-// sistemare resize finestra o disabilitare ?
-//sistemare mapping 
-//facile convertire vst
 MainComponent::MainComponent() {
     menuBar = std::make_unique<juce::MenuBarComponent>(this);
     addAndMakeVisible(menuBar.get());
@@ -52,13 +46,14 @@ MainComponent::MainComponent() {
         if (extractor.onStateChanged) extractor.onStateChanged();
     };
 
-
     extractor.getAudioPlayer().onPlaybackStarted = [this](double sampleRate, int blockSize) {
         extractor.setActiveFeatures(getActiveFeatures());
+        extractor.prepareLiveFeatures();
         if (extractor.onStateChanged) extractor.onStateChanged();
         };
 
     extractor.onPrepareForBatch = [this] {
+        if (extractor.onStateChanged) extractor.onStateChanged();
         extractor.setActiveFeatures(getActiveFeatures());
         extractor.setActiveFunctionals(getActiveFunctionals());
         };
@@ -71,6 +66,16 @@ MainComponent::MainComponent() {
     addAndMakeVisible(&csvLabel);
     csvLabel.setText("Select CSV Path", dontSendNotification);
     csvLabel.setFont(Font(18.0f, Font::bold));
+
+    addAndMakeVisible(csvNameEditor);
+    csvNameEditor.setText(extractor.getCsvFileName());
+    csvNameEditor.onTextChange = [this] {
+        extractor.setCsvFileName(csvNameEditor.getText());
+        };
+
+    addAndMakeVisible(csvNameLabel);
+    csvNameLabel.setText("CSV File Name:", dontSendNotification);
+    csvNameLabel.attachToComponent(&csvNameEditor, false);
 
     extractor.onStateChanged = [this] { juce::MessageManager::callAsync([this] {
         updateInterfaceState();
@@ -130,7 +135,7 @@ MainComponent::MainComponent() {
 
     if (midiOutputList.getSelectedId() == 0) { extractor.setMidiOutput(0); }
 
-    setSize(800, 600);
+    setSize(800, 650);
 
     if (RuntimePermissions::isRequired(RuntimePermissions::recordAudio)
         && !RuntimePermissions::isGranted(RuntimePermissions::recordAudio)) {
@@ -296,6 +301,10 @@ void MainComponent::resized() {
     centerColumn.removeFromTop(20);
     csvLabel.setBounds(centerColumn.removeFromTop(30));
     csvPathButton.setBounds(centerColumn.removeFromTop(40).reduced(0, 2));
+    centerColumn.removeFromTop(15);
+    csvNameLabel.setBounds(centerColumn.removeFromTop(20));
+    centerColumn.removeFromTop(15);
+    csvNameEditor.setBounds(centerColumn.removeFromTop(30));
 }
 
 void MainComponent::paint(juce::Graphics& g) {

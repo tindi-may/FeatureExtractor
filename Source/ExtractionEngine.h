@@ -20,6 +20,10 @@ public:
 	//csv
 	void setCsvPath(const juce::String& newPath) { csvPath = newPath; }
 	juce::String getCsvPath() const { return csvPath; }
+	void setCsvFileName(const String& newName) {
+		csvFileName = File::createLegalFileName(newName);
+	}
+	String getCsvFileName() const { return csvFileName; }
 
 	//osc
 	void setOscIP(String ip) { oscIP = ip; }
@@ -63,6 +67,7 @@ private:
 
 	//csv
 	String csvPath;
+	String csvFileName = "Analisi_Features";
 
 	//midi
 	std::atomic<bool> midiEnabled = false;

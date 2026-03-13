@@ -44,6 +44,8 @@ private:
     Label csvLabel;
     FuncList funcList;
     FeatList featList;
+    TextEditor csvNameEditor;
+    Label csvNameLabel;
 
     //sample rate
     Slider rateSlider;
@@ -69,5 +71,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
-
-

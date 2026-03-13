@@ -8,10 +8,11 @@ public:
 	~MidiMapper() {};
 
 	void toMidi(const FeatureResult& res, String name, MidiBuffer& midiMessages);
+	void resetValues() { lastNote = -1; }
 
 private:
 	int lastNote = -1;
-	int currentOctave = 5;
+	std::vector<int> lastChord;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiMapper)
 };
 

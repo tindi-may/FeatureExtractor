@@ -1,50 +1,79 @@
 #include "FeatureMapper.h"
-//mappa o enum meglio
+#include <algorithm>
+#define MIDI_CHAN 1
+#define CC_PAN 10
+#define CC_BRIGHTNESS 74
+#define CC_RMS 7
+#define CC_MOMENTS 16
+#define MAX_SKEW_THRESHOLD 10.0f
+#define MAX_KURT_THRESHOLD 150.0f
+#define CHORD_NOTE_AMT 3
+#define DEFAULT_OCTAVE 5
+
 void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiMessages)
 {
     if (res.isEmpty()) return;
 
-    float val = res.values[0];
-
     if (name == "PAN") {
-        auto panCC = roundToInt(jlimit(0.0f, 127.0f, jmap(val, -1.0f, 1.0f, 0.0f, 127.0f)));
-        midiMessages.addEvent(MidiMessage::controllerEvent(1, 10, panCC), 0);
+        auto panCC = roundToInt(jlimit(0.0f, 127.0f, jmap(res.values[0], -1.0f, 1.0f, 0.0f, 127.0f)));
+        midiMessages.addEvent(MidiMessage::controllerEvent(MIDI_CHAN, CC_PAN, panCC), 0);
     }
     else if (name == "Brightness") {
-        auto brightCC = roundToInt(jlimit(0.0f, 127.0f, jmap(log(jlimit(20.0f, 20000.0f, val)), log(20.0f), log(20000.0f), 0.0f, 127.0f)));
-        midiMessages.addEvent(MidiMessage::controllerEvent(1, 74, brightCC), 0);
+        auto brightCC = roundToInt(jlimit(0.0f, 127.0f, jmap(log10(jlimit(20.0f, 20000.0f, res.values[0])), log10(20.0f), log10(20000.0f), 0.0f, 127.0f)));
+        midiMessages.addEvent(MidiMessage::controllerEvent(MIDI_CHAN, CC_BRIGHTNESS, brightCC), 0);
     }
     else if (name == "RRMS") {
-        float dbRms = Decibels::gainToDecibels(val, -48.0f);
+        float dbRms = Decibels::gainToDecibels(res.values[0], -48.0f);
         auto rmsValue = jlimit(1, 127, roundToInt(jmap(dbRms, -48.0f, 0.0f, 1.0f, 127.0f)));
-        midiMessages.addEvent(MidiMessage::controllerEvent(1, 7, rmsValue), 0);
+        midiMessages.addEvent(MidiMessage::controllerEvent(MIDI_CHAN, CC_RMS, rmsValue), 0);
     }
-    else if (name == "Fundamental frequency") { // nota singola
-        if (val > 20.0f) {
-            float rawMidiNote = 12.0f * std::log2(val / 440.0f) + 69.0f;
-            currentOctave = std::floor(rawMidiNote / 12.0f);
-            currentOctave = juce::jlimit(0, 10, currentOctave);
+    else if (name == "Spectral Moments") {
+        auto centroidValue = roundToInt(jlimit(0.0f, 127.0f, jmap(log10(jlimit(20.0f, 20000.0f, res.values[0])), log10(20.0f), log10(20000.0f), 0.0f, 127.0f)));
+        auto spreadValue = roundToInt(jlimit(0.0f, 127.0f, jmap(log10(jlimit(20.0f, 20000.0f, res.values[1])), log10(20.0f), log10(20000.0f), 0.0f, 127.0f)));
+        //mapping basato su osservazione perchè non c'è un range ben definito...
+        auto skewValue = roundToInt(jlimit(0.0f, 127.0f, jmap(res.values[2], 0.0f, MAX_SKEW_THRESHOLD, 0.0f, 127.0f)));
+        auto kurtosisValue = roundToInt(jlimit(0.0f, 127.0f, jmap(log10(jlimit(0.0f, MAX_KURT_THRESHOLD, res.values[3])), log10(0.0f), log10(MAX_KURT_THRESHOLD), 0.0f, 127.0f)));
+
+        midiMessages.addEvent(MidiMessage::controllerEvent(MIDI_CHAN, CC_MOMENTS, centroidValue), 0);
+        midiMessages.addEvent(MidiMessage::controllerEvent(MIDI_CHAN, CC_MOMENTS +1, spreadValue), 0);
+        midiMessages.addEvent(MidiMessage::controllerEvent(MIDI_CHAN, CC_MOMENTS +2, skewValue), 0);
+        midiMessages.addEvent(MidiMessage::controllerEvent(MIDI_CHAN, CC_MOMENTS +3 , kurtosisValue), 0);
+    }
+    else if (name == "Fundamental frequency") {
+        if (res.values[0] > 20.0f) {
+
+            float rawMidiNote = 12.0f * log2(res.values[0] / 440.0f) + 69.0f;
+            int note = roundToInt(jlimit(0.0f, 127.0f, rawMidiNote));
+            if (note != lastNote) {
+                if (lastNote != -1) { midiMessages.addEvent(MidiMessage::noteOff(MIDI_CHAN, lastNote), 0); }
+                midiMessages.addEvent(MidiMessage::noteOn(MIDI_CHAN, note, (uint8)100), 0);
+                lastNote = note;
+            }
         }
     }
-    else if (name == "Chromagram") { //accordi (ottava standard)
-        auto it = std::max_element(res.values.begin(), res.values.end());
-        int noteInOctave = std::distance(res.values.begin(), it);
+    else if (name == "Chromagram") {
+        //vettore coppia sennò perdo riferimento nota
+        std::vector<std::pair<float, int>> chroma;
+        for (int i = 0; i < res.values.size(); ++i) {
+            chroma.push_back({ res.values[i], i });
+        }
 
-        int currentNote = (currentOctave * 12) + noteInOctave;
+        //devo rendere sort decrescente
+        std::sort(chroma.begin(), chroma.end(), std::greater<int>());
 
-        if (currentNote != lastNote) {
-            if (lastNote != -1)
-                midiMessages.addEvent(MidiMessage::noteOff(1, lastNote), 0);
+        for (int oldNote : lastChord) {
+            midiMessages.addEvent(MidiMessage::noteOff(MIDI_CHAN, oldNote), 0);
+        }
+        lastChord.clear();
 
-            midiMessages.addEvent(MidiMessage::noteOn(1, juce::jlimit(0, 127, currentNote), (uint8)100), 0);
-            lastNote = juce::jlimit(0, 127, currentNote);
+        for (int i = 0; i < CHORD_NOTE_AMT; ++i) {
+            if (chroma[i].first > 0.1f) { 
+                int note = (DEFAULT_OCTAVE * 12) + chroma[i].second;
+                midiMessages.addEvent(MidiMessage::noteOn(MIDI_CHAN, note, (uint8)100), 0);
+                lastChord.push_back(note);
+            }
         }
     }
-
-    //spectral moments cc general purpose
-
-
-    midiMessages.swapWith(midiMessages);
 }
 
 void OscMapper::toOsc(const FeatureResult& res, String name, OSCSender& sender) {

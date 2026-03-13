@@ -3,24 +3,23 @@
 #include "SpectralFeatures.h"
 
 #define BATCH_BLOCK_SIZE 4096
-#define CSV_FILE_NAME "AnalisiBatch.csv"
 
 MyFeatureExtractor::MyFeatureExtractor() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
 	csvPath = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
 
     audioPlayer.onProcessRequested = [this](std::vector<File> filesToProcess) {
-        if (onStateChanged) onStateChanged();
         processFile(filesToProcess);
     };
 
-    audioPlayer.onPlaybackStarted = [this](double sampleRate, int blockSize) {
-        for (auto* f : activeFeatures) {
-            f->prepareToPlay(sampleRate, blockSize);
-        }
-    };
+    //audioPlayer.onPlaybackStarted = [this](double sampleRate, int blockSize) {
+    //    for (auto* f : activeFeatures) {
+    //        f->prepareToPlay(sampleRate, blockSize);
+    //    }
+    //};
 
     audioPlayer.onPlaybackStopped = [this] {
         if (onStateChanged) onStateChanged();
+        midiMapper.resetValues();
     };
 
     auto midiOutputs = MidiOutput::getAvailableDevices();
@@ -101,20 +100,17 @@ void MyFeatureExtractor::getNextAudioBlock(const AudioSourceChannelInfo& bufferT
                 sampleCount = sr / updateRate;
             }
         }
+        
     }
-
-    if (onStateChanged) onStateChanged();
 }
 
 void MyFeatureExtractor::processFile(std::vector<File> filesToProcess) {
-    juce::MessageManager::callAsync([this] {
-        if (onPrepareForBatch) onPrepareForBatch();
-        });
+
+    if (onPrepareForBatch) onPrepareForBatch();
+
     if (filesToProcess.empty()) return;
 
     filesToProcessRun = filesToProcess;
-
-    audioPlayer.setProcessEnabled(false);
 
     ThreadWithProgressWindow::launchThread();
 }
@@ -124,7 +120,7 @@ void MyFeatureExtractor::run() {
     bool processCancelled = false;
 
     String nomeCartella = filesToProcessRun[0].getParentDirectory().getFileName();
-    File fileScrittura = File(csvPath).getChildFile(CSV_FILE_NAME);//macro
+    File fileScrittura = File(csvPath).getChildFile(csvFileName + ".csv");
 
     if (fileScrittura.existsAsFile()) {
         fileScrittura.deleteFile();
@@ -196,7 +192,7 @@ void MyFeatureExtractor::run() {
 
     if (processCancelled) {
         MessageManager::callAsync([this] {
-            audioPlayer.setProcessEnabled(true);
+            if (onStateChanged) onStateChanged();
             String message;
             message << "Processing cancelled";
             NativeMessageBox::showMessageBoxAsync(AlertWindow::InfoIcon, "Cancelled", message);
@@ -204,7 +200,7 @@ void MyFeatureExtractor::run() {
     }
     else {
         MessageManager::callAsync([this, totalTimeSeconds, count = filesToProcessRun.size()] {
-            audioPlayer.setProcessEnabled(true);
+            if (onStateChanged) onStateChanged();
             String message;
             message << "Batch completed! " << count << " files processed in " << String(totalTimeSeconds, 2) << "s.";
             NativeMessageBox::showMessageBoxAsync(AlertWindow::InfoIcon, "Success", message);
