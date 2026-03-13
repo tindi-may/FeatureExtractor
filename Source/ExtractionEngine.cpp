@@ -18,8 +18,8 @@ MyFeatureExtractor::MyFeatureExtractor() : audioPlayer(formatManager), ThreadWit
     //};
 
     audioPlayer.onPlaybackStopped = [this] {
-        if (onStateChanged) onStateChanged();
         midiMapper.resetValues();
+        if (onStateChanged) onStateChanged();
     };
 
     auto midiOutputs = MidiOutput::getAvailableDevices();

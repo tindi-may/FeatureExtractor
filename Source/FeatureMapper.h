@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <JuceHeader.h>
 #include "Features.h"
 
@@ -8,7 +9,7 @@ public:
 	~MidiMapper() {};
 
 	void toMidi(const FeatureResult& res, String name, MidiBuffer& midiMessages);
-	void resetValues() { lastNote = -1; }
+	void resetValues() { lastNote = -1; lastChord.clear(); }
 
 private:
 	int lastNote = -1;
