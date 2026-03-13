@@ -51,7 +51,6 @@ void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiM
         }
     }
     else if (name == "Chromagram") {
-        // 1. Prepariamo i candidati ordinati come già facevi
         std::vector<std::pair<float, int>> chroma;
         for (int i = 0; i < res.values.size(); ++i) {
             chroma.push_back({ res.values[i], i });
@@ -61,7 +60,6 @@ void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiM
             return a.first > b.first;
             });
 
-        // 2. Identifichiamo quali note dovrebbero essere attive ora
         std::vector<int> nextChord;
         for (int i = 0; i < CHORD_NOTE_AMT && i < chroma.size(); ++i) {
             if (chroma[i].first > 0.1f) {
@@ -69,23 +67,20 @@ void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiM
             }
         }
 
-        // 3. NOTE OFF: Spegni solo le note che erano attive ma non sono nel nuovo accordo
         for (int oldNote : lastChord) {
-            // Se la nota vecchia NON è presente nel nuovo accordo, la spegniamo
+
             if (std::find(nextChord.begin(), nextChord.end(), oldNote) == nextChord.end()) {
                 midiMessages.addEvent(MidiMessage::noteOff(MIDI_CHAN, oldNote), 0);
             }
         }
 
-        // 4. NOTE ON: Accendi solo le note nuove che non erano già attive
         for (int newNote : nextChord) {
-            // Se la nota nuova NON era già presente nel vecchio accordo, la accendiamo
+
             if (std::find(lastChord.begin(), lastChord.end(), newNote) == lastChord.end()) {
                 midiMessages.addEvent(MidiMessage::noteOn(MIDI_CHAN, newNote, (uint8)100), 0);
             }
         }
 
-        // 5. Aggiorniamo lo stato per il prossimo blocco
         lastChord = nextChord;
     }
 }
