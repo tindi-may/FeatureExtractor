@@ -3,6 +3,7 @@
 #include "Spectrogram.h"
 #include "FeatureResult.h"
 
+//commentare procedura aggiunta feature
 class Feature {
 public:
     Feature() {}

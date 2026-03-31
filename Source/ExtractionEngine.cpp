@@ -2,6 +2,7 @@
 #include "TemporalFeatures.h"
 #include "SpectralFeatures.h"
 
+//macro file a parte
 #define BATCH_BLOCK_SIZE 4096
 
 MyFeatureExtractor::MyFeatureExtractor() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {

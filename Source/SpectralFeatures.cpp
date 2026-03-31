@@ -1,5 +1,7 @@
 #include "SpectralFeatures.h"
 
+//fare diventare threshold macro
+
 void SpectralMoments::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) {
     const float binToHz = static_cast<float>(sampleRate) / static_cast<float>(fftSize);
 
@@ -15,7 +17,7 @@ void SpectralMoments::calculateSpectralFeatures(const std::vector<float>& magnit
         weightedSum += magnitude * freq;
     }
 
-    if (sumMag > 1e-6f)
+    if (sumMag > 1e-3f) 
     {
         centroid = weightedSum / sumMag;
 
@@ -230,8 +232,8 @@ void F0::findPitch()
                 break;
         }
 
-        // Se troviamo un multiplo con strength maggiore del 60%, � probabile sia la vera fondamentale
-        if (bestIdx >= 0 && mStrengthVector[bestIdx] > *maxIt * 0.6f)
+        // Se troviamo un multiplo con strength maggiore del 80%, � probabile sia la vera fondamentale
+        if (bestIdx >= 0 && mStrengthVector[bestIdx] > *maxIt * 0.8f)
         {
             peakIndex = bestIdx;
             mCurrentStrength = mStrengthVector[bestIdx];

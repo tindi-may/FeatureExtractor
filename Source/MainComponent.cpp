@@ -2,6 +2,14 @@
 #include "TemporalFeatures.h"
 #include "SpectralFeatures.h"
 
+//TODO: usare solo checkbox per live
+//TODO: ridurre sr 5-50
+//TODO: usare valuetreestate
+//TODO: tasto refresh midi
+//TODO: output volume sotto rate
+//TODO: disattivamento ui
+//TODO: finestra avviso se non selezioni functional o feature
+
 MainComponent::MainComponent() {
     menuBar = std::make_unique<juce::MenuBarComponent>(this);
     addAndMakeVisible(menuBar.get());

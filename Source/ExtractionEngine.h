@@ -5,14 +5,14 @@
 #include "FeatureMapper.h"
 #include "AudioPlayer.h"
 
-class MyFeatureExtractor : public AudioAppComponent, public ThreadWithProgressWindow {
+class MyFeatureExtractor : public ThreadWithProgressWindow {
 public:
 	MyFeatureExtractor();
 	~MyFeatureExtractor() {};
 
-	void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override;
-	void getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) override;
-	void releaseResources() override;
+	void prepareToPlay(int samplesPerBlockExpected, double sampleRate);
+	void getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill);
+	void releaseResources();
 
 	AudioPlayer& getAudioPlayer() { return audioPlayer; }
 	std::function<void()> onStateChanged;

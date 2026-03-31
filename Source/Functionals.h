@@ -11,7 +11,7 @@ public:
 	virtual String getName() const = 0;
 	virtual void reset() = 0;
 	virtual FeatureResult getResult()  = 0;
-	virtual Functional* clone() const = 0;
+	//virtual Functional* clone() const = 0;
 
 protected:
 	StringArray savedNames;
@@ -29,7 +29,7 @@ public:
 	String getName() const override { return "Average"; }
 	void reset() override { sums.clear(); count = 0; savedNames.clear(); }
 	FeatureResult getResult() override;
-	Functional* clone() const override { return new Average(); }
+	//Functional* clone() const override { return new Average(); }
 
 private:
 	std::vector<double> sums;
@@ -46,7 +46,7 @@ public:
 	String getName() const override { return "Median"; }
 	void reset() override { values.clear(); savedNames.clear(); }
 	FeatureResult getResult() override;
-	Functional* clone() const override { return new Median(); }
+	//Functional* clone() const override { return new Median(); }
 
 private:
 	std::vector <std::vector<float>> values;
@@ -62,7 +62,7 @@ public:
 	String getName() const override { return "Standard deviation"; }
 	void reset() override { sums.clear(); sumSquares.clear(); count = 0; savedNames.clear(); }
 	FeatureResult getResult() override;
-	Functional* clone() const override { return new StdDev(); }
+	//Functional* clone() const override { return new StdDev(); }
 
 private:
 	int count = 0;
@@ -79,7 +79,7 @@ public:
 	String getName() const override { return "IQR"; }
 	void reset() override { values.clear(); savedNames.clear(); }
 	FeatureResult getResult() override;
-	Functional* clone() const override { return new IQR(); }
+	//Functional* clone() const override { return new IQR(); }
 
 private:
 	std::vector <std::vector<float>> values;

@@ -1,6 +1,8 @@
 #pragma once
 #include <JuceHeader.h>
 
+
+//importante ordine lettura featureResult
 struct FeatureResult {
     juce::StringArray names;
     std::vector<float> values;

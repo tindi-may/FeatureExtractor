@@ -2,6 +2,7 @@
 #include <algorithm>
 
 void Average::store(const FeatureResult& res) {
+    if (res.values[0] <= 0.0001f) return;
     if (sums.empty()) {
         sums.resize(res.values.size(), 0.0);
         savedNames = res.names;
