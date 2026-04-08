@@ -22,6 +22,8 @@ private:
     void processFrame();
     void processSpectrum(float* data, int numBins);
 
+    int framesInBlock = 0;
+
     int fftOrder;
     int fftSize;
     int numBins;

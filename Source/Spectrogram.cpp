@@ -37,8 +37,19 @@ void FFT::processSample(float& sample)
 
 void FFT::processBlock(float* data, int numSamples)
 {
+    std::fill(magnitudes.begin(), magnitudes.end(), 0.0f);
+    framesInBlock = 0;
+    frameReady = false;
+
     for (int i = 0; i < numSamples; ++i) {
         processSample(data[i]);
+    }
+
+    if (framesInBlock > 0) {
+        for (int i = 0; i < numBins; ++i) {
+            magnitudes[i] /= framesInBlock;
+        }
+        frameReady = true;
     }
 }
 
@@ -47,36 +58,31 @@ void FFT::processFrame()
     const float* inputPtr = inputFifo.data();
     float* fftPtr = fftData.data();
 
-    // Copy the input FIFO into the FFT working space in two parts.
     std::memcpy(fftPtr, inputPtr + pos, (fftSize - pos) * sizeof(float));
     if (pos > 0) {
         std::memcpy(fftPtr + fftSize - pos, inputPtr, pos * sizeof(float));
     }
 
-    // Apply the window to avoid spectral leakage.
     window.multiplyWithWindowingTable(fftPtr, fftSize);
 
-    // Perform the forward FFT.
     fft.performRealOnlyForwardTransform(fftPtr, true);
 
-    frameReady = true;
-
-    // Do stuff with the FFT data.
     processSpectrum(fftPtr, numBins);
-
 }
 
 void FFT::processSpectrum(float* data, int numBins)
 {
     if (magnitudes.size() != numBins)
-        magnitudes.resize(numBins);
+        magnitudes.resize(numBins, 0.0f);
 
     for (int i = 0; i < numBins; ++i)
     {
         float re = data[2 * i];
         float im = data[2 * i + 1];
-        magnitudes[i] = std::sqrt(re * re + im * im);
+        magnitudes[i] += std::sqrt(re * re + im * im);
     }
+
+    framesInBlock++;
 }
 
 std::vector<float>& FFT::getMagnitudes() {
