@@ -2,7 +2,7 @@
 #include <JuceHeader.h>
 
 
-//importante ordine lettura featureResult
+//TODO: importanza ordine lettura featureResult
 struct FeatureResult {
     juce::StringArray names;
     std::vector<float> values;

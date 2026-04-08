@@ -21,7 +21,7 @@ public:
 
         addAndMakeVisible(&featListBox);
         featListBox.setModel(this);
-        featListBox.setColour(ListBox::backgroundColourId, Colours::black.withAlpha(0.2f));
+        //featListBox.setColour(ListBox::backgroundColourId, Colours::black.withAlpha(0.2f));
         featListBox.setRowHeight(25);
         featListBox.setMultipleSelectionEnabled(true);
         featListBox.setClickingTogglesRowSelection(true);

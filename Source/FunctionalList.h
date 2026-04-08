@@ -17,7 +17,7 @@ public:
 
         addAndMakeVisible(&funcListBox);
         funcListBox.setModel(this);
-        funcListBox.setColour(ListBox::backgroundColourId, Colours::black.withAlpha(0.2f));
+        //funcListBox.setColour(ListBox::backgroundColourId, Colours::black.withAlpha(0.2f));
         funcListBox.setRowHeight(25);
         funcListBox.setMultipleSelectionEnabled(true);
         funcListBox.setClickingTogglesRowSelection(true);

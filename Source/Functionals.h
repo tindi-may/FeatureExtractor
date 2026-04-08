@@ -11,7 +11,6 @@ public:
 	virtual String getName() const = 0;
 	virtual void reset() = 0;
 	virtual FeatureResult getResult()  = 0;
-	//virtual Functional* clone() const = 0;
 
 protected:
 	StringArray savedNames;

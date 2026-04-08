@@ -1,6 +1,6 @@
 #include "SpectralFeatures.h"
 
-//fare diventare threshold macro
+//TODO: fare diventare threshold macro
 
 void SpectralMoments::calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) {
     const float binToHz = static_cast<float>(sampleRate) / static_cast<float>(fftSize);

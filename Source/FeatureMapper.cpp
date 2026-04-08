@@ -11,8 +11,8 @@
 
 void MidiMapper::toMidi(const FeatureResult& res, String name, MidiBuffer& midiMessages)
 {
-    //nome delle feature enum condiviso (magari file macro)
-    //qua faccio o switch case o mappa feature-cc
+    //TODO: nome delle feature enum condiviso (magari file macro)
+    //TODO: qua faccio o switch case o mappa feature-cc
     if (res.isEmpty()) return;
 
     if (name == "PAN") {

@@ -3,36 +3,38 @@
 AudioPlayer::AudioPlayer(AudioFormatManager& manager)
     : state(Stopped), formatManager(manager)
 {
+    juce::Colour darkSpruce = juce::Colour(0xFF214E34);
+    juce::Colour deepForest = darkSpruce.darker(0.7f); 
+
     addAndMakeVisible(&openButton);
-    openButton.setButtonText("Seleziona Cartella...");
+    openButton.setButtonText("Select folder...");
     openButton.onClick = [this] { openButtonClicked(); };
 
     addAndMakeVisible(&pathLabel);
-    pathLabel.setText("Nessuna cartella selezionata", dontSendNotification);
+    pathLabel.setText("No folder selected", dontSendNotification);
     pathLabel.setJustificationType(Justification::centredLeft);
-    pathLabel.setColour(Label::textColourId, Colours::grey);
+    pathLabel.setColour(Label::textColourId, juce::Colours::white.withAlpha(0.7f));
 
     addAndMakeVisible(&fileListBox);
     fileListBox.setModel(this);
-    fileListBox.setColour(ListBox::backgroundColourId, Colours::black.withAlpha(0.2f));
     fileListBox.setRowHeight(25);
 
     addAndMakeVisible(&playButton);
     playButton.setButtonText("Play");
     playButton.onClick = [this] { playButtonClicked(); };
-    playButton.setColour(TextButton::buttonColourId, Colours::green);
+    playButton.setColour(TextButton::buttonColourId, deepForest);
     playButton.setEnabled(false);
 
     addAndMakeVisible(&stopButton);
     stopButton.setButtonText("Stop");
     stopButton.onClick = [this] { stopButtonClicked(); };
-    stopButton.setColour(TextButton::buttonColourId, Colours::red);
+    stopButton.setColour(TextButton::buttonColourId, deepForest);
     stopButton.setEnabled(false);
 
     addAndMakeVisible(&processButton);
     processButton.setButtonText("Process Folder");
     processButton.onClick = [this] { processButtonClicked(); };
-    processButton.setColour(TextButton::buttonColourId, Colours::darkgrey);
+    processButton.setColour(TextButton::buttonColourId, deepForest);
     processButton.setEnabled(false);
 
     transportSource.addChangeListener(this);
@@ -90,7 +92,7 @@ void AudioPlayer::paint(Graphics& g)
 
 void AudioPlayer::openButtonClicked()
 {
-    chooser = std::make_unique<FileChooser>("Seleziona cartella...", File(), "*");
+    chooser = std::make_unique<FileChooser>("Select folder...", File(), "*");
 
     chooser->launchAsync(FileBrowserComponent::openMode | FileBrowserComponent::canSelectDirectories,
         [this](const FileChooser& fc) {
@@ -98,7 +100,7 @@ void AudioPlayer::openButtonClicked()
 
             if (result.isDirectory()) {
 
-                pathLabel.setText("Cartella: " + result.getFullPathName(), dontSendNotification);
+                pathLabel.setText("Folder: " + result.getFullPathName(), dontSendNotification);
                 pathLabel.setColour(Label::textColourId, Colours::white);
 
                 currentFileList.clear();
