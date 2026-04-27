@@ -2,95 +2,101 @@
 #include "TemporalFeatures.h"
 #include "SpectralFeatures.h"
 
-//TODO: usare solo checkbox per live
 //TODO: usare valuetreestate
 //TODO: tasto refresh midi
 //TODO: output volume sotto rate
 //TODO: disattivamento ui
 //TODO: finestra avviso se non selezioni functional o feature
+//TODO: fix bug canali live input
+//TODO: macro file a parte
 
 MainComponent::MainComponent() {
 
-    juce::Colour darkSpruce = juce::Colour(0xFF214E34);
-    juce::Colour dustyOlive = juce::Colour(0xFF5C7457);
-    juce::Colour greyOlive = juce::Colour(0xFF979B8D);
+    setLookAndFeel(&customLF);
 
-    juce::Colour deepForest = darkSpruce.darker(0.7f);
+    addAndMakeVisible(&settingsBtn);
+    settingsBtn.onClick = [this] {
+        auto* selector = new juce::AudioDeviceSelectorComponent(deviceManager, 1, 2, 1, 2, false, false, false, false);
+        selector->setSize(500, 450);
+        juce::DialogWindow::LaunchOptions options;
+        options.content.setOwned(selector);
+        options.dialogTitle = "Audio Settings";
+        options.componentToCentreAround = this;
+        options.launchAsync();
+        };
+
+    addAndMakeVisible(&monitorBtn);
+    monitorBtn.setClickingTogglesState(true);
+    monitorBtn.setColour(juce::TextButton::buttonOnColourId, juce::Colour::fromString("#FF2D9CFF"));
+    monitorBtn.onClick = [this] {
+        extractor.setMonitorMode(monitorBtn.getToggleState());
+        };
+
+    juce::Colour darkBg = juce::Colour::fromString("#FF1A1A1E");
+    juce::Colour panelBg = juce::Colour::fromString("#FF2A2A30");
+    juce::Colour outlineColor = juce::Colour::fromString("#FF404048");
+    juce::Colour accentBlue = juce::Colour::fromString("#FF2D9CFF");
 
     auto& lf = getLookAndFeel();
-
-    lf.setColour(juce::ResizableWindow::backgroundColourId, darkSpruce);
-    lf.setColour(juce::PopupMenu::backgroundColourId, darkSpruce);
-    lf.setColour(juce::PopupMenu::textColourId, juce::Colours::white);
-    lf.setColour(juce::PopupMenu::highlightedBackgroundColourId, dustyOlive);
-
-    lf.setColour(juce::TextEditor::backgroundColourId, deepForest);
+    lf.setColour(juce::ResizableWindow::backgroundColourId, darkBg);
+    lf.setColour(juce::TextEditor::backgroundColourId, panelBg);
     lf.setColour(juce::TextEditor::textColourId, juce::Colours::white);
-    lf.setColour(juce::TextEditor::outlineColourId, greyOlive);
-    lf.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colours::white);
+    lf.setColour(juce::TextEditor::outlineColourId, outlineColor);
+    lf.setColour(juce::TextEditor::focusedOutlineColourId, accentBlue);
     lf.setColour(juce::TextEditor::shadowColourId, juce::Colours::transparentBlack);
-
-    lf.setColour(juce::ComboBox::backgroundColourId, deepForest);
+    lf.setColour(juce::ComboBox::backgroundColourId, panelBg);
     lf.setColour(juce::ComboBox::textColourId, juce::Colours::white);
-    lf.setColour(juce::ComboBox::outlineColourId, greyOlive);
+    lf.setColour(juce::ComboBox::outlineColourId, outlineColor);
     lf.setColour(juce::ComboBox::arrowColourId, juce::Colours::white);
-
-    lf.setColour(juce::ListBox::backgroundColourId, deepForest);
-    lf.setColour(juce::ListBox::outlineColourId, greyOlive);
-
-
-    lf.setColour(juce::ScrollBar::thumbColourId, dustyOlive); 
-    lf.setColour(juce::ScrollBar::backgroundColourId, deepForest); 
-    lf.setColour(juce::ScrollBar::trackColourId, deepForest);
-
-
+    lf.setColour(juce::ListBox::backgroundColourId, panelBg);
+    lf.setColour(juce::ListBox::outlineColourId, outlineColor);
+    lf.setColour(juce::ScrollBar::thumbColourId, outlineColor.brighter(0.2f));
+    lf.setColour(juce::ScrollBar::backgroundColourId, panelBg);
+    lf.setColour(juce::ScrollBar::trackColourId, panelBg);
     lf.setColour(juce::Label::textColourId, juce::Colours::white);
     lf.setColour(juce::ToggleButton::textColourId, juce::Colours::white);
-    lf.setColour(juce::ToggleButton::tickColourId, juce::Colours::white);
-    lf.setColour(juce::ToggleButton::tickDisabledColourId, greyOlive);
-    lf.setColour(juce::TextButton::buttonColourId, deepForest); 
+    lf.setColour(juce::ToggleButton::tickColourId, accentBlue);
+    lf.setColour(juce::ToggleButton::tickDisabledColourId, outlineColor);
+    lf.setColour(juce::TextButton::buttonColourId, panelBg);
     lf.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
     lf.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     lf.setColour(juce::Slider::thumbColourId, juce::Colours::white);
-    lf.setColour(juce::Slider::trackColourId, greyOlive);
-    lf.setColour(juce::Slider::backgroundColourId, darkSpruce.darker(0.2f));
+    lf.setColour(juce::Slider::trackColourId, outlineColor);
+    lf.setColour(juce::Slider::backgroundColourId, darkBg);
 
-    menuBar = std::make_unique<juce::MenuBarComponent>(this);
-    addAndMakeVisible(menuBar.get());
+    addAndMakeVisible(&inputPanel);
+    addAndMakeVisible(&analysisPanel);
+    addAndMakeVisible(&meteringPanel);
+    addAndMakeVisible(&outputPanel);
 
     addAndMakeVisible(waveViewer);
-    waveViewer.setOpaque(false); 
-    waveViewer.setColours(juce::Colours::transparentBlack, greyOlive.brighter(0.4f));
+    waveViewer.setOpaque(false);
+    waveViewer.setColours(juce::Colours::transparentBlack, panelBg.brighter(0.4f));
     waveViewer.setRepaintRate(60);
     waveViewer.setBufferSize(256);
     waveViewer.setSamplesPerBlock(256);
 
     addAndMakeVisible(rateSlider);
+    rateSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    rateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    rateSlider.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
     rateSlider.setRange(5.0, 50.0, 1.0);
     rateSlider.setValue(20.0);
     rateSlider.setTextValueSuffix(" Hz");
     rateSlider.onValueChange = [this] {extractor.setUpdateRate(rateSlider.getValue()); };
 
     addAndMakeVisible(rateLabel);
-    rateLabel.setText("Message Rate:", dontSendNotification);
-    rateLabel.attachToComponent(&rateSlider, false);
-    rateLabel.setJustificationType(Justification::centred);
+    rateLabel.setText("Message Rate", juce::dontSendNotification);
+    rateLabel.setFont(juce::Font(15.0f, juce::Font::bold));
+    rateLabel.setJustificationType(juce::Justification::centredLeft);
 
-    addAndMakeVisible(liveInputCheck);
-    liveInputCheck.setButtonText("Live Input");
-    liveInputCheck.onClick = [this] {
-        extractor.setLiveMode(liveInputCheck.getToggleState());
-        if (extractor.isLiveModeOn()) {
+    extractor.getAudioPlayer().onLiveModeToggled = [this](bool isLive) {
+        extractor.setLiveMode(isLive);
+        if (isLive) {
             extractor.setActiveFeatures(getActiveFeatures());
             extractor.prepareLiveFeatures();
         }
         if (extractor.onStateChanged) extractor.onStateChanged();
-        };
-
-    addAndMakeVisible(monitorCheck);
-    monitorCheck.setButtonText("Monitor");
-    monitorCheck.onClick = [this] {
-        extractor.setMonitorMode(monitorCheck.getToggleState());
         };
 
     extractor.getAudioPlayer().onPlaybackStarted = [this](double sampleRate, int blockSize) {
@@ -107,13 +113,26 @@ MainComponent::MainComponent() {
 
     addAndMakeVisible(extractor.getAudioPlayer());
 
+    addAndMakeVisible(&batchOutputLabel);
+    batchOutputLabel.setText("Batch Output", juce::dontSendNotification);
+    batchOutputLabel.setFont(juce::Font(18.0f, juce::Font::bold));
+    batchOutputLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+
+    addAndMakeVisible(&liveOutputLabel);
+    liveOutputLabel.setText("Live Output", juce::dontSendNotification);
+    liveOutputLabel.setFont(juce::Font(18.0f, juce::Font::bold));
+    liveOutputLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+
+    addAndMakeVisible(&csvLabel);
+    csvLabel.setText("CSV", juce::dontSendNotification);
+    csvLabel.setFont(juce::Font(15.0f, juce::Font::bold)); 
+
     addAndMakeVisible(&csvPathButton);
     csvPathButton.setButtonText(extractor.getCsvPath());
     csvPathButton.onClick = [this] {pathButtonClicked(); };
 
-    addAndMakeVisible(&csvLabel);
-    csvLabel.setText("Select CSV Path", dontSendNotification);
-    csvLabel.setFont(Font(18.0f, Font::bold));
+    addAndMakeVisible(&csvSelectFolderLabel);
+    csvSelectFolderLabel.setText("Select CSV folder:", juce::dontSendNotification);
 
     addAndMakeVisible(csvNameEditor);
     csvNameEditor.setText(extractor.getCsvFileName());
@@ -121,16 +140,15 @@ MainComponent::MainComponent() {
     csvNameEditor.onTextChange = [this] { extractor.setCsvFileName(csvNameEditor.getText()); };
 
     addAndMakeVisible(csvNameLabel);
-    csvNameLabel.setText("CSV File Name:", dontSendNotification);
-    csvNameLabel.attachToComponent(&csvNameEditor, false);
+    csvNameLabel.setText("CSV File Name:", juce::dontSendNotification);
 
     extractor.onStateChanged = [this] { juce::MessageManager::callAsync([this] {
         updateInterfaceState();
         }); };
 
     addAndMakeVisible(midiTitleLabel);
-    midiTitleLabel.setText("MIDI", dontSendNotification);
-    midiTitleLabel.setFont(Font(18.0f, Font::bold));
+    midiTitleLabel.setText("MIDI", juce::dontSendNotification);
+    midiTitleLabel.setFont(juce::Font(15.0f, juce::Font::bold));
 
     addAndMakeVisible(midiCheck);
     midiCheck.setButtonText("");
@@ -138,20 +156,19 @@ MainComponent::MainComponent() {
 
     addAndMakeVisible(midiOutputListLabel);
     midiOutputListLabel.setText("MIDI Output:", juce::dontSendNotification);
-    midiOutputListLabel.attachToComponent(&midiOutputList, false);
 
     addAndMakeVisible(midiOutputList);
     midiOutputList.addItemList(extractor.getMidiOutput(), 1);
     midiOutputList.onChange = [this] {
         if (extractor.setMidiOutput(midiOutputList.getSelectedItemIndex())) {
-            midiOutputList.setSelectedId(midiOutputList.getSelectedItemIndex() + 1, dontSendNotification);
+            midiOutputList.setSelectedId(midiOutputList.getSelectedItemIndex() + 1, juce::dontSendNotification);
         }
         };
     if (midiOutputList.getSelectedId() == 0) { extractor.setMidiOutput(0); }
 
     addAndMakeVisible(oscTitleLabel);
-    oscTitleLabel.setText("OSC", dontSendNotification);
-    oscTitleLabel.setFont(Font(18.0f, Font::bold));
+    oscTitleLabel.setText("OSC", juce::dontSendNotification);
+    oscTitleLabel.setFont(juce::Font(15.0f, juce::Font::bold));
 
     addAndMakeVisible(oscCheck);
     oscCheck.setButtonText("");
@@ -166,11 +183,10 @@ MainComponent::MainComponent() {
         };
 
     addAndMakeVisible(oscIPLabel);
-    oscIPLabel.setText("OSC IP address:", dontSendNotification);
-    oscIPLabel.attachToComponent(&oscIPEditor, false);
+    oscIPLabel.setText("IP Address:", juce::dontSendNotification);
 
     addAndMakeVisible(oscPortEditor);
-    oscPortEditor.setText((String)extractor.getOscPort());
+    oscPortEditor.setText((juce::String)extractor.getOscPort());
     oscPortEditor.setJustification(juce::Justification::centred);
     oscPortEditor.onTextChange = [this] {
         extractor.setOscPort(oscPortEditor.getText().getIntValue());
@@ -178,48 +194,20 @@ MainComponent::MainComponent() {
         };
 
     addAndMakeVisible(oscPortLabel);
-    oscPortLabel.setText("OSC port:", dontSendNotification);
-    oscPortLabel.attachToComponent(&oscPortEditor, false);
+    oscPortLabel.setText("Port:", juce::dontSendNotification);
 
     addAndMakeVisible(&featList);
     addAndMakeVisible(&funcList);
 
-    setSize(850, 650);
+    setSize(925, 700);
 
-    if (RuntimePermissions::isRequired(RuntimePermissions::recordAudio)
-        && !RuntimePermissions::isGranted(RuntimePermissions::recordAudio)) {
-        RuntimePermissions::request(RuntimePermissions::recordAudio,
+    if (juce::RuntimePermissions::isRequired(juce::RuntimePermissions::recordAudio)
+        && !juce::RuntimePermissions::isGranted(juce::RuntimePermissions::recordAudio)) {
+        juce::RuntimePermissions::request(juce::RuntimePermissions::recordAudio,
             [&](bool granted) { setAudioChannels(granted ? 2 : 0, 2); });
     }
     else {
         setAudioChannels(2, 2);
-    }
-}
-
-juce::StringArray MainComponent::getMenuBarNames() {
-    return { "Options" };
-}
-
-juce::PopupMenu MainComponent::getMenuForIndex(int menuIndex, const juce::String& menuName) {
-    juce::PopupMenu menu;
-
-    if (menuName == "Options") {
-        menu.addItem(AudioSettings, "Impostazioni Audio...");
-    }
-
-    return menu;
-}
-
-void MainComponent::menuItemSelected(int menuID, int menuIndex) {
-    if (menuID == AudioSettings) {
-        
-        auto* selector = new AudioDeviceSelectorComponent(deviceManager, 1, 2, 1, 2, false, false, false, false);
-        selector->setSize(500, 450);
-        DialogWindow::LaunchOptions options;
-        options.content.setOwned(selector);
-        options.dialogTitle = "Audio Settings";
-        options.componentToCentreAround = this;
-        options.launchAsync();
     }
 }
 
@@ -232,10 +220,9 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
     extractor.prepareToPlay(samplesPerBlockExpected, sampleRate);
 }
 
-void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) {
+void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill) {
     extractor.getNextAudioBlock(bufferToFill);
     waveViewer.pushBuffer(bufferToFill);
-    //monitor
     if (extractor.isLiveModeOn() && !extractor.isMonitorOn()) {
         bufferToFill.clearActiveBufferRegion();
     }
@@ -246,20 +233,14 @@ void MainComponent::updateInterfaceState() {
 
     featList.setEnabled(shouldBeEnabled);
     funcList.setEnabled(shouldBeEnabled);
-
     oscIPEditor.setEnabled(shouldBeEnabled);
     oscPortEditor.setEnabled(shouldBeEnabled);
     midiCheck.setEnabled(shouldBeEnabled);
     oscCheck.setEnabled(shouldBeEnabled);
     midiOutputList.setEnabled(shouldBeEnabled);
-
     rateSlider.setEnabled(shouldBeEnabled);
-    rateLabel.setEnabled(shouldBeEnabled);
-
     csvPathButton.setEnabled(shouldBeEnabled);
     extractor.getAudioPlayer().setInteractionEnabled(shouldBeEnabled);
-
-    liveInputCheck.setEnabled(!extractor.getAudioPlayer().isPlaying() && !extractor.isThreadRunning());
 }
 
 std::vector<Feature*> MainComponent::getActiveFeatures() {
@@ -286,9 +267,9 @@ std::vector<Functional*> MainComponent::getActiveFunctionals() {
 
 void MainComponent::pathButtonClicked()
 {
-    chooser = std::make_unique<FileChooser>("Select Path...", File(), "*");
-    chooser->launchAsync(FileBrowserComponent::saveMode | FileBrowserComponent::canSelectDirectories,
-        [this](const FileChooser& fc) {
+    chooser = std::make_unique<juce::FileChooser>("Select Path...", juce::File(), "*");
+    chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectDirectories,
+        [this](const juce::FileChooser& fc) {
             auto result = fc.getResult();
             if (result.isDirectory()) {
                 extractor.setCsvPath(result.getFullPathName());
@@ -303,64 +284,127 @@ void MainComponent::releaseResources() {
 
 void MainComponent::resized() {
     auto area = getLocalBounds();
-    menuBar->setBounds(area.removeFromTop(25));
+    area.reduce(15, 15);
 
-    area.reduce(25, 25);
-    auto columnWidth = area.getWidth() / 3.0f;
+    auto headerArea = area.removeFromTop(45);
+    auto buttonsArea = headerArea.removeFromLeft(100);
 
-    auto leftColumn = area.removeFromLeft(columnWidth).reduced(10, 0);
-    extractor.getAudioPlayer().setBounds(leftColumn.removeFromTop(450));
-    leftColumn.removeFromTop(20);
+    settingsBtn.setBounds(buttonsArea.removeFromLeft(40).withSizeKeepingCentre(40, 40));
+    buttonsArea.removeFromLeft(10);
+    monitorBtn.setBounds(buttonsArea.removeFromLeft(40).withSizeKeepingCentre(40, 40));
 
-    auto liveRow = leftColumn.removeFromTop(30);
-    auto togglesArea = liveRow.withSizeKeepingCentre(220, 30);
-    liveInputCheck.setBounds(togglesArea.removeFromLeft(110));
-    monitorCheck.setBounds(togglesArea);
+    area.removeFromTop(10);
 
-    auto rightColumn = area.removeFromRight(columnWidth).reduced(10, 0);
+    auto leftArea = area.removeFromLeft(area.getWidth() * 0.33f);
+    inputPanel.setBounds(leftArea);
 
-    waveViewer.setBounds(rightColumn.removeFromTop(180));
+    area.removeFromLeft(10);
 
-    rightColumn.removeFromTop(25);
+    auto bottomArea = area.removeFromBottom(area.getHeight() * 0.40f);
+    outputPanel.setBounds(bottomArea);
 
-    auto midiHeader = rightColumn.removeFromTop(30);
-    midiTitleLabel.setBounds(midiHeader.removeFromLeft(60));
-    midiCheck.setBounds(midiHeader.removeFromLeft(30));
+    area.removeFromBottom(10);
 
-    rightColumn.removeFromTop(20);
-    midiOutputList.setBounds(rightColumn.removeFromTop(30));
+    auto analysisArea = area.removeFromLeft(area.getWidth() * 0.5f);
+    analysisPanel.setBounds(analysisArea);
 
-    rightColumn.removeFromTop(20);
+    area.removeFromLeft(10);
+    meteringPanel.setBounds(area);
 
-    auto oscHeader = rightColumn.removeFromTop(30);
-    oscTitleLabel.setBounds(oscHeader.removeFromLeft(60));
-    oscCheck.setBounds(oscHeader.removeFromLeft(30));
+    int tabOffset = 35;
+    int padding = 15;
 
-    rightColumn.removeFromTop(20);
-    oscIPEditor.setBounds(rightColumn.removeFromTop(30));
-    rightColumn.removeFromTop(25);
-    oscPortEditor.setBounds(rightColumn.removeFromTop(30));
+    auto inputContent = inputPanel.getBounds().reduced(padding);
+    inputContent.removeFromTop(tabOffset);
+    extractor.getAudioPlayer().setBounds(inputContent);
 
-    rightColumn.removeFromTop(20);
-    rateLabel.setBounds(rightColumn.removeFromTop(20));
-    rateSlider.setBounds(rightColumn.removeFromTop(30));
+    auto analysisContent = analysisPanel.getBounds().reduced(padding);
+    analysisContent.removeFromTop(tabOffset);
+    featList.setBounds(analysisContent.removeFromTop(analysisContent.getHeight() * 0.5f - 10));
+    analysisContent.removeFromTop(20);
+    funcList.setBounds(analysisContent);
 
-    auto centerColumn = area.reduced(10, 0);
-    featList.setBounds(centerColumn.removeFromTop(180));
-    centerColumn.removeFromTop(25);
-    funcList.setBounds(centerColumn.removeFromTop(180));
-    centerColumn.removeFromTop(10);
+    auto meteringContent = meteringPanel.getBounds().reduced(padding);
+    meteringContent.removeFromTop(tabOffset);
+    waveViewer.setBounds(meteringContent);
 
-    csvLabel.setBounds(centerColumn.removeFromTop(30));
-    csvPathButton.setBounds(centerColumn.removeFromTop(30));
-    centerColumn.removeFromTop(10);
-    csvNameLabel.setBounds(centerColumn.removeFromTop(20));
-    csvNameEditor.setBounds(centerColumn.removeFromTop(30));
+    auto outputContent = outputPanel.getBounds().reduced(padding);
+    outputContent.removeFromTop(tabOffset);
+
+    auto csvWidth = outputContent.getWidth() * 0.28f;
+
+    auto megaTitlesArea = outputContent.removeFromTop(25);
+    batchOutputLabel.setBounds(megaTitlesArea.removeFromLeft(csvWidth));
+    megaTitlesArea.removeFromLeft(30);
+    liveOutputLabel.setBounds(megaTitlesArea);
+
+    outputContent.removeFromTop(5);
+
+    auto csvCol = outputContent.removeFromLeft(csvWidth).reduced(5, 0);
+    auto separatorArea = outputContent.removeFromLeft(30);
+    auto liveArea = outputContent;
+    auto liveColWidth = liveArea.getWidth() / 3.0f;
+
+    auto oscCol = liveArea.removeFromLeft(liveColWidth).reduced(5, 0);
+    auto midiCol = liveArea.removeFromLeft(liveColWidth).reduced(5, 0);
+    auto rateCol = liveArea.reduced(5, 0);
+
+    csvLabel.setBounds(csvCol.removeFromTop(25));
+
+    auto oscHead = oscCol.removeFromTop(25);
+    oscTitleLabel.setBounds(oscHead.removeFromLeft(45));
+    oscCheck.setBounds(oscHead);
+
+    auto midiHead = midiCol.removeFromTop(25);
+    midiTitleLabel.setBounds(midiHead.removeFromLeft(45));
+    midiCheck.setBounds(midiHead);
+
+    rateLabel.setBounds(rateCol.removeFromTop(25));
+
+    csvSelectFolderLabel.setBounds(csvCol.removeFromTop(20));
+    oscIPLabel.setBounds(oscCol.removeFromTop(20));
+    midiOutputListLabel.setBounds(midiCol.removeFromTop(20));
+    rateCol.removeFromTop(20);
+
+    csvPathButton.setBounds(csvCol.removeFromTop(26));
+    oscIPEditor.setBounds(oscCol.removeFromTop(26));
+    midiOutputList.setBounds(midiCol.removeFromTop(26));
+
+    csvCol.removeFromTop(10);
+    oscCol.removeFromTop(10);
+    midiCol.removeFromTop(10);
+
+    csvNameLabel.setBounds(csvCol.removeFromTop(20));
+    oscPortLabel.setBounds(oscCol.removeFromTop(20));
+
+    csvNameEditor.setBounds(csvCol.removeFromTop(26));
+    oscPortEditor.setBounds(oscCol.removeFromTop(26));
+
+    rateCol.removeFromTop(0);
+    rateSlider.setBounds(rateCol.removeFromTop(70).withSizeKeepingCentre(70, 70));
 }
 
 void MainComponent::paint(juce::Graphics& g) {
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
-    juce::Colour greyOlive = juce::Colour(0xFF979B8D);
-    g.setColour(greyOlive);
-    g.drawRect(waveViewer.getBounds().toFloat(), 1.0f);
+    g.setColour(juce::Colours::white.withAlpha(0.2f));
+
+    g.drawRoundedRectangle(waveViewer.getBounds().toFloat(), 5.0f, 1.0f);
+
+    auto outBounds = outputPanel.getBounds().reduced(15);
+    outBounds.removeFromTop(35);
+
+    float lineX = outBounds.getX() + (outBounds.getWidth() * 0.28f) + 15.0f;
+
+    float lineY = outBounds.getY() + 30.0f;
+    float lineBottom = outBounds.getBottom() - 5.0f;
+
+    juce::Colour lineColor = juce::Colours::white.withAlpha(0.15f);
+    juce::Colour transparent = juce::Colours::white.withAlpha(0.0f);
+
+    juce::ColourGradient gradient(transparent, lineX, lineY, transparent, lineX, lineBottom, false);
+    gradient.addColour(0.2, lineColor);
+    gradient.addColour(0.8, lineColor);
+
+    g.setGradientFill(gradient);
+    g.drawLine(lineX, lineY, lineX, lineBottom, 1.5f);
 }

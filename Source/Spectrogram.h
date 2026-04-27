@@ -1,10 +1,10 @@
 #pragma once
 #include <JuceHeader.h>
 
-class FFT {
+class STFT {
 public:
-    FFT(int order);
-    ~FFT() {}
+    STFT(int order);
+    ~STFT() {}
 
     int getLatencyInSamples() const { return fftSize; };
     void prepareToPlay();
@@ -41,5 +41,5 @@ private:
     std::vector<float> fftData;
     std::vector<float> magnitudes;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FFT)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(STFT)
 };

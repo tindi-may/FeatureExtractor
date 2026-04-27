@@ -2,7 +2,7 @@
 
 void SpectralFeature::prepareToPlay(double sr, int samplesPerBlock)
 {
-	fft.prepareToPlay();
+	stft.prepareToPlay();
 	sampleRate = sr;
 	aux.setSize(1, samplesPerBlock);
 	aux.clear();
@@ -19,10 +19,10 @@ void SpectralFeature::processBlock(AudioBuffer<float>& buffer)
 		aux.copyFrom(0, 0, buffer, 0, 0, buffer.getNumSamples());
 	}
 
-	fft.processBlock(aux.getWritePointer(0), buffer.getNumSamples());
+	stft.processBlock(aux.getWritePointer(0), buffer.getNumSamples());
 
-	if (fft.isFrameReady()) {
-		calculateSpectralFeatures(fft.getMagnitudes(), fft.getFftSize(), fft.getNumBins());
-		fft.clearFrameReadyFlag();
+	if (stft.isFrameReady()) {
+		calculateSpectralFeatures(stft.getMagnitudes(), stft.getFftSize(), stft.getNumBins());
+		stft.clearFrameReadyFlag();
 	}
 }

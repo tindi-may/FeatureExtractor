@@ -3,7 +3,7 @@
 #include <JuceHeader.h>
 #include "Functionals.h"
 
-class FuncList : public Component, public ListBoxModel {
+class FuncList : public juce::Component, public juce::ListBoxModel {
 public:
     FuncList() {
         functionals.add(new Average());
@@ -11,56 +11,67 @@ public:
         functionals.add(new StdDev());
         functionals.add(new IQR());
 
-        addAndMakeVisible(&functionalsLabel);
-        functionalsLabel.setText("Functionals", dontSendNotification);
-        functionalsLabel.setFont(Font(18.0f, Font::bold));
+        addAndMakeVisible(&functionalsGroup);
+        functionalsGroup.setText("Functionals");
+        functionalsGroup.setTextLabelPosition(juce::Justification::centredLeft);
+        functionalsGroup.setColour(juce::GroupComponent::textColourId, juce::Colours::white);
+        functionalsGroup.setColour(juce::GroupComponent::outlineColourId, juce::Colours::white.withAlpha(0.4f));
 
         addAndMakeVisible(&funcListBox);
         funcListBox.setModel(this);
-        //funcListBox.setColour(ListBox::backgroundColourId, Colours::black.withAlpha(0.2f));
+
+        funcListBox.setColour(juce::ListBox::backgroundColourId, juce::Colours::transparentBlack);
         funcListBox.setRowHeight(25);
         funcListBox.setMultipleSelectionEnabled(true);
         funcListBox.setClickingTogglesRowSelection(true);
     }
+
     ~FuncList() override {}
 
-    void paint(Graphics& g) override { g.fillAll(getLookAndFeel().findColour(ResizableWindow::backgroundColourId)); }
+    void paint(juce::Graphics& g) override {
+        g.fillAll(juce::Colours::transparentBlack);
+    }
+
     void resized() override {
         auto area = getLocalBounds();
-        functionalsLabel.setBounds(area.removeFromTop(30));
-        area.removeFromTop(5);
-        funcListBox.setBounds(area); 
+        functionalsGroup.setBounds(area);
+        funcListBox.setBounds(area.reduced(5, 5).withTrimmedTop(15));
     }
 
     int getNumRows() override {
         return (int)functionals.size();
     }
-    void paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected) override {
+
+    void paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override {
         if (rowIsSelected) {
-            g.setColour(Colours::white);
-            g.setFont(Font("Sans-Serif", 18.0f, Font::plain));
-            g.drawText(CharPointer_UTF8("\xe2\x9c\x93"), -15, 0, width, height, Justification::centredRight, false);
+
+            g.fillAll(juce::Colours::white.withAlpha(0.1f));
+
+            g.setColour(juce::Colours::white);
+            g.setFont(juce::Font("Sans-Serif", 18.0f, juce::Font::plain));
+            g.drawText(juce::CharPointer_UTF8("\xe2\x9c\x93"), -10, 0, width, height, juce::Justification::centredRight, false);
         }
 
-        g.setColour(Colours::white);
-        g.setFont(Font("Sans-Serif", 14.0f, Font::plain));
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font("Sans-Serif", 14.0f, juce::Font::plain));
 
         if (rowNumber < (int)functionals.size()) {
-            g.drawText(functionals[rowNumber]->getName(), 5, 0, width, height, Justification::centredLeft);
+            g.drawText(functionals[rowNumber]->getName(), 10, 0, width, height, juce::Justification::centredLeft);
         }
     }
+
     void selectedRowsChanged(int lastRowSelected) override {}
 
     bool isRowSelected(int row) {
         return funcListBox.isRowSelected(row);
     }
 
-    OwnedArray<Functional>& getFunctionals () { return functionals; }
+    juce::OwnedArray<Functional>& getFunctionals() { return functionals; }
 
 private:
-    ListBox funcListBox;
-    OwnedArray<Functional> functionals;
-    Label functionalsLabel;
+    juce::ListBox funcListBox;
+    juce::OwnedArray<Functional> functionals;
+    juce::GroupComponent functionalsGroup; 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FuncList)
 };

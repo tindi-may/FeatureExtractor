@@ -3,28 +3,9 @@
 #include "FunctionalList.h"
 #include "FeatureList.h"
 #include "ExtractionEngine.h"
+#include "MyTheme.h"
 
-class ModernLookAndFeel : public juce::LookAndFeel_V4 {
-public:
-    // Forza in modo assoluto l'uso di un font moderno (Arial)
-    juce::Typeface::Ptr getTypefaceForFont(const juce::Font& f) override {
-        return juce::Typeface::createSystemTypefaceFor(juce::Font("Arial", f.getHeight(), f.getStyleFlags()));
-    }
-
-    // Arrotonda lo sfondo delle Textbox (raggio 8.0f)
-    void fillTextEditorBackground(juce::Graphics& g, int width, int height, juce::TextEditor& textEditor) override {
-        g.setColour(textEditor.findColour(juce::TextEditor::backgroundColourId));
-        g.fillRoundedRectangle(0.0f, 0.0f, (float)width, (float)height, 8.0f);
-    }
-
-    // Arrotonda il bordo (outline) delle Textbox
-    void drawTextEditorOutline(juce::Graphics& g, int width, int height, juce::TextEditor& textEditor) override {
-        g.setColour(textEditor.findColour(juce::TextEditor::outlineColourId));
-        g.drawRoundedRectangle(0.5f, 0.5f, (float)width - 1.0f, (float)height - 1.0f, 8.0f, 1.5f);
-    }
-};
-
-class MainComponent  : public AudioAppComponent, public MenuBarModel {
+class MainComponent  : public AudioAppComponent {
 public:
     MainComponent();
     ~MainComponent() override;
@@ -36,37 +17,35 @@ public:
     void paint(juce::Graphics& g) override;
     void resized() override;
 
-    StringArray getMenuBarNames() override;
-    PopupMenu getMenuForIndex(int menuIndex, const String& menuName) override;
-    void menuItemSelected(int menuID, int menuIndex) override;
-
 private:
+
+    Label batchOutputLabel;
+    Label liveOutputLabel;
+
+    SectionPanel inputPanel{ "Input",    juce::Colour::fromString("#FF2D9CFF") };
+    SectionPanel analysisPanel{ "Analysis", juce::Colour::fromString("#FFA700FF") };
+    SectionPanel meteringPanel{ "Waveform", juce::Colour::fromString("#FFFF7B00") };
+    SectionPanel outputPanel{ "Output",   juce::Colour::fromString("#FF42C800") };
 
     ModernLookAndFeel customLF;
     MyFeatureExtractor extractor;
 
-    std::unique_ptr<juce::MenuBarComponent> menuBar;
+    CircleIconButton settingsBtn{ "Settings", BinaryData::settings_svg, BinaryData::settings_svgSize };
+    CircleIconButton monitorBtn{ "Monitor", BinaryData::headphones_svg, BinaryData::headphones_svgSize };
 
-    enum MenuIDs {
-        AudioSettings = 1,
-        ExitApp
-    };
 
-    AudioVisualiserComponent waveViewer{ 1 }; //lascio un canale??? o ne voglio due visto che una feature l pan??????????
+    AudioVisualiserComponent waveViewer{ 1 }; //per ora un canale
 
     void updateInterfaceState();
 
     std::vector<Feature*> getActiveFeatures();
     std::vector<Functional*> getActiveFunctionals();
 
-    //live input
-    ToggleButton liveInputCheck;
-    ToggleButton monitorCheck;
-
     Label csvLabel;
     FuncList funcList;
     FeatList featList;
     TextEditor csvNameEditor;
+    Label csvSelectFolderLabel;
     Label csvNameLabel;
 
     //sample rate

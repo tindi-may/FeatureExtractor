@@ -2,7 +2,6 @@
 #include "TemporalFeatures.h"
 #include "SpectralFeatures.h"
 
-//TODO: macro file a parte
 #define BATCH_BLOCK_SIZE 4096
 
 MyFeatureExtractor::MyFeatureExtractor() : audioPlayer(formatManager), ThreadWithProgressWindow("Processing files...", true, true) {
@@ -11,12 +10,6 @@ MyFeatureExtractor::MyFeatureExtractor() : audioPlayer(formatManager), ThreadWit
     audioPlayer.onProcessRequested = [this](std::vector<File> filesToProcess) {
         processFile(filesToProcess);
     };
-
-    //audioPlayer.onPlaybackStarted = [this](double sampleRate, int blockSize) {
-    //    for (auto* f : activeFeatures) {
-    //        f->prepareToPlay(sampleRate, blockSize);
-    //    }
-    //};
 
     audioPlayer.onPlaybackStopped = [this] {
         midiMapper.resetValues();
@@ -120,17 +113,12 @@ void MyFeatureExtractor::run() {
     auto startTime = Time::getMillisecondCounterHiRes();
     bool processCancelled = false;
 
-    // Aggiungi queste variabili all'inizio di run()
-    std::map<String, double> featureTimes; // Salva i millisecondi per ogni feature
-    double totalAudioDurationSeconds = 0.0;
-
     String nomeCartella = filesToProcessRun[0].getParentDirectory().getFileName();
     File fileScrittura = File(csvPath).getChildFile(csvFileName + ".csv");
 
     if (fileScrittura.existsAsFile()) {
         fileScrittura.deleteFile();
     }
-
 
     if (auto outputStream = std::unique_ptr<FileOutputStream>(fileScrittura.createOutputStream())) {
 
@@ -167,16 +155,7 @@ void MyFeatureExtractor::run() {
 
                     FeatureResult featPackage;
                     for (auto* f : activeFeatures) {
-                        // --- INIZIO CRONOMETRO FEATURE ---
-                        auto startFeat = Time::getMillisecondCounterHiRes();
-
                         f->processBlock(buffer);
-
-                        auto endFeat = Time::getMillisecondCounterHiRes();
-                        // --- FINE CRONOMETRO FEATURE ---
-
-                        featureTimes[f->getName()] += (endFeat - startFeat);
-                        f->getResult(featPackage);
                     }
 
                     for (auto* func : activeFunctionals) {
@@ -184,9 +163,6 @@ void MyFeatureExtractor::run() {
                     }
                     startSample += BATCH_BLOCK_SIZE;
                 }
-
-                // Dopo il while, accumula la durata del file appena letto
-                totalAudioDurationSeconds += (double)reader->lengthInSamples / reader->sampleRate;
 
                 String riga = file.getFileName();
 
@@ -205,18 +181,6 @@ void MyFeatureExtractor::run() {
     }
     auto stopTime = Time::getMillisecondCounterHiRes();
     auto totalTimeSeconds = (stopTime - startTime) / 1000.0f;
-
-    String performanceReport = "\n--- Performance Report (per minute of audio) ---\n";
-    double totalAudioMinutes = totalAudioDurationSeconds / 60.0;
-
-    for (auto const& [name, millis] : featureTimes) {
-        double secondsForFeature = millis / 1000.0;
-        double perMinute = secondsForFeature / totalAudioMinutes;
-        performanceReport << name << ": " << String(perMinute, 4) << "s\n";
-    }
-
-    // Stampa questo nel log o in un file
-    Logger::writeToLog(performanceReport);
 
     if (processCancelled) {
         MessageManager::callAsync([this] {

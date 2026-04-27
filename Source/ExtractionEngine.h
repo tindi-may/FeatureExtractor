@@ -67,7 +67,7 @@ private:
 
 	//csv
 	String csvPath;
-	String csvFileName = "Analisi_Features";
+	String csvFileName = "Feature_analysis";
 
 	//midi
 	std::atomic<bool> midiEnabled = false;

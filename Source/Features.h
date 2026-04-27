@@ -23,7 +23,7 @@ private:
 
 class SpectralFeature : public Feature {
 public:
-	SpectralFeature(int fftOrder) : fft(fftOrder) {}
+	SpectralFeature(int fftOrder) : stft(fftOrder) {}
 
 	void prepareToPlay(double sr, int samplesPerBlock) override;
 
@@ -34,7 +34,7 @@ public:
 	virtual void calculateSpectralFeatures(const std::vector<float>& magnitudes, int fftSize, int numBins) = 0;
 
 protected:
-	FFT fft;
+	STFT stft;
 	AudioBuffer<float> aux;
 	double sampleRate;
 

@@ -1,32 +1,33 @@
 #pragma once
-
 #include <JuceHeader.h>
+#include "MyTheme.h"
 
-class AudioPlayer : public Component, public ChangeListener, public ListBoxModel
+class AudioPlayer : public juce::Component, public juce::ChangeListener, public juce::ListBoxModel
 {
 public:
-    AudioPlayer(AudioFormatManager& manager);
+    AudioPlayer(juce::AudioFormatManager& manager);
     ~AudioPlayer() override;
 
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate);
-    void getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill);
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill);
     void releaseResources();
 
-    void paint(Graphics& g) override;
+    void paint(juce::Graphics& g) override;
     void resized() override;
 
-    void changeListenerCallback(ChangeBroadcaster* source) override;
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
     bool isPlaying() const;
 
-    std::function<void(std::vector<File>)> onProcessRequested;
+    std::function<void(std::vector<juce::File>)> onProcessRequested;
     std::function<void(double, int)> onPlaybackStarted;
     std::function<void()> onPlaybackStopped;
+    std::function<void(bool)> onLiveModeToggled;
 
     void setInteractionEnabled(bool shouldBeEnabled);
     void setProcessEnabled(bool shouldBeEnabled);
 
     int getNumRows() override;
-    void paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected) override;
+    void paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override;
     void selectedRowsChanged(int lastRowSelected) override;
 
 private:
@@ -41,22 +42,24 @@ private:
     void playButtonClicked();
     void stopButtonClicked();
     void processButtonClicked();
-    void loadFile(const File& file);
+    void loadFile(const juce::File& file);
+    void setGuiLiveMode(bool isLive);
 
-    TextButton openButton;
-    TextButton playButton;
-    TextButton stopButton;
-    TextButton processButton;
+    SvgButton folderTabBtn;
+    SvgButton liveTabBtn;
+    SvgButton playButton;
+    SvgButton stopButton;
 
-    ListBox fileListBox;
-    std::vector<File> currentFileList;
-    Label pathLabel;
+    juce::TextButton processButton;
 
-    std::unique_ptr<FileChooser> chooser;
+    juce::ListBox fileListBox;
+    std::vector<juce::File> currentFileList;
+    juce::Label pathLabel;
 
-    AudioFormatManager& formatManager;
-    std::unique_ptr<AudioFormatReaderSource> readerSource;
-    AudioTransportSource transportSource;
+    std::unique_ptr<juce::FileChooser> chooser;
+    juce::AudioFormatManager& formatManager;
+    std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
+    juce::AudioTransportSource transportSource;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioPlayer)
 };

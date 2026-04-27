@@ -3,6 +3,14 @@
 <JUCERPROJECT id="IjGjdi" name="FeatureExtractor" projectType="guiapp" useAppConfig="1"
               addUsingNamespaceToJuceHeader="1" jucerFormatVersion="1">
   <MAINGROUP id="CMlDDS" name="FeatureExtractor">
+    <GROUP id="{BFA770F8-BFB5-183E-AD53-FA157F074AA6}" name="Resources">
+      <FILE id="AbRXl4" name="folder.svg" compile="0" resource="1" file="Resources/folder.svg"/>
+      <FILE id="U2HfJm" name="headphones.svg" compile="0" resource="1" file="Resources/headphones.svg"/>
+      <FILE id="u86d2t" name="mic.svg" compile="0" resource="1" file="Resources/mic.svg"/>
+      <FILE id="ALxyvv" name="pause.svg" compile="0" resource="1" file="Resources/pause.svg"/>
+      <FILE id="qJo9wP" name="play.svg" compile="0" resource="1" file="Resources/play.svg"/>
+      <FILE id="VhuKSC" name="settings.svg" compile="0" resource="1" file="Resources/settings.svg"/>
+    </GROUP>
     <GROUP id="{F7028EB2-3483-D4DB-947F-AFB218135CAC}" name="Source">
       <GROUP id="{C91DE991-4571-954E-07FE-BBC78D99D4D9}" name="FeatureHandling">
         <FILE id="dh593s" name="FeatureMapper.cpp" compile="1" resource="0"
@@ -10,6 +18,7 @@
         <FILE id="PoLXct" name="FeatureMapper.h" compile="0" resource="0" file="Source/FeatureMapper.h"/>
       </GROUP>
       <GROUP id="{D7192CD4-C2E0-6962-5DAC-44304037381F}" name="GUI">
+        <FILE id="TbFnql" name="MyTheme.h" compile="0" resource="0" file="Source/MyTheme.h"/>
         <FILE id="fzQXPB" name="FeatureList.h" compile="0" resource="0" file="Source/FeatureList.h"/>
         <FILE id="MMXd7o" name="FunctionalList.h" compile="0" resource="0"
               file="Source/FunctionalList.h"/>
@@ -37,8 +46,8 @@
               file="Source/ExtractionEngine.cpp"/>
         <FILE id="paePJ4" name="ExtractionEngine.h" compile="0" resource="0"
               file="Source/ExtractionEngine.h"/>
-        <FILE id="waWhMW" name="Spectrogram.cpp" compile="1" resource="0" file="Source/Spectrogram.cpp"/>
         <FILE id="GsmjfG" name="Spectrogram.h" compile="0" resource="0" file="Source/Spectrogram.h"/>
+        <FILE id="waWhMW" name="Spectrogram.cpp" compile="1" resource="0" file="Source/Spectrogram.cpp"/>
       </GROUP>
       <FILE id="R8SuvJ" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="qYxDFj" name="AudioPlayer.cpp" compile="1" resource="0" file="Source/AudioPlayer.cpp"/>

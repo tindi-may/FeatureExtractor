@@ -1,6 +1,6 @@
 #include "Spectrogram.h"
 
-FFT::FFT(int order) : fftOrder(order), fftSize(1 << order), numBins(fftSize / 2 + 1),
+STFT::STFT(int order) : fftOrder(order), fftSize(1 << order), numBins(fftSize / 2 + 1),
 overlap(2), hopSize(fftSize / overlap), fft(order), window(fftSize + 1, juce::dsp::WindowingFunction<float>::WindowingMethod::hann, true)
 {
     inputFifo.resize(fftSize, 0.0f);
@@ -8,25 +8,22 @@ overlap(2), hopSize(fftSize / overlap), fft(order), window(fftSize + 1, juce::ds
     magnitudes.resize(numBins, 0.0f);
 }
 
-void FFT::prepareToPlay()
+void STFT::prepareToPlay()
 {
     count = 0;
     pos = 0;
     std::fill(inputFifo.begin(), inputFifo.end(), 0.0f);
 }
 
-void FFT::processSample(float& sample)
+void STFT::processSample(float& sample)
 {
-    // Push the new sample value into the input FIFO.
     inputFifo[pos] = sample;
 
-    // Advance the FIFO index and wrap around if necessary.
     pos += 1;
     if (pos == fftSize) {
         pos = 0;
     }
 
-    // Process the FFT frame once we've collected hopSize samples.
     count += 1;
     if (count == hopSize) {
         count = 0;
@@ -35,7 +32,7 @@ void FFT::processSample(float& sample)
 
 }
 
-void FFT::processBlock(float* data, int numSamples)
+void STFT::processBlock(float* data, int numSamples)
 {
     std::fill(magnitudes.begin(), magnitudes.end(), 0.0f);
     framesInBlock = 0;
@@ -53,7 +50,7 @@ void FFT::processBlock(float* data, int numSamples)
     }
 }
 
-void FFT::processFrame()
+void STFT::processFrame()
 {
     const float* inputPtr = inputFifo.data();
     float* fftPtr = fftData.data();
@@ -70,7 +67,7 @@ void FFT::processFrame()
     processSpectrum(fftPtr, numBins);
 }
 
-void FFT::processSpectrum(float* data, int numBins)
+void STFT::processSpectrum(float* data, int numBins)
 {
     if (magnitudes.size() != numBins)
         magnitudes.resize(numBins, 0.0f);
@@ -85,6 +82,6 @@ void FFT::processSpectrum(float* data, int numBins)
     framesInBlock++;
 }
 
-std::vector<float>& FFT::getMagnitudes() {
+std::vector<float>& STFT::getMagnitudes() {
     return magnitudes;
 }
